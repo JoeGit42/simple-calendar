@@ -16,3 +16,5 @@ E.g.
   * calender weeks are shown, but this can be disabled.
 
 Widget is tested tested only a bit.
+
+![](IMG_0524.jpeg)
