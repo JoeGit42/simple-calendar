@@ -21,3 +21,14 @@ Widget is tested tested only a bit.
 ![](IMG_0525.jpeg)
 ![](RPReplay_Final1604782995.mov)
 
+### Bugs
+
+### Fixes
+
+### InitialVersion (07.11.2020)
+
+
+### ChangeLog
+- 2020-11-08 ADD: Support of public holidays (uses feiertage-api.de). Indicated with same color as Sundays.
+- 2020-11-08 CHG: Saturdays, Sundays and Holidays in next and previous month, so also get the right color, but will remain with thin font.
+- 2020-11-08 FIX: Some finetuning, for today circle incl. font color
