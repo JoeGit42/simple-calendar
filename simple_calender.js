@@ -366,31 +366,33 @@ function setCellStyle(day, reference, cellStack, cellText, feiertage) {
     if (day.getDay() == 0 && fontColorSun) cellText.textColor = fontColorSun
     cellText.font = fontCal
   }
-  if ( sameDay(day, today) ) {
-    cellText.font = fontToday
-    const highlightedDate = getHighlightedDate(cellText.text)
-    cellText.text = ""
-    cellStack.addImage(highlightedDate);
-  }
   if (markPublicHoliday && feiertage && feiertage2) {
     if (isFeiertag (feiertage, feiertage2, day) && fontColorSun) cellText.textColor = fontColorSun
+  }
+  // today get a nice circle
+  if ( sameDay(day, today) ) {
+    cellText.font = fontToday
+    const highlightedDate = getHighlightedDate(cellText.text, cellText.textColor)
+    cellText.text = ""
+    cellStack.addImage(highlightedDate);
   }
   cellText.centerAlignText()
 }
 
-function getHighlightedDate(date) {
-  const drawing = new DrawContext();
-  drawing.respectScreenScale = true;
-  const size = 50;
-  drawing.size = new Size(size, size);
-  drawing.opaque = false;
-  drawing.setFillColor(fontColorToday);
-  drawing.fillEllipse(new Rect(1, 1, size - 2, size - 2));
-  drawing.setFont(Font.boldSystemFont(28));
-  drawing.setTextAlignedCenter();
-  drawing.drawTextInRect(date, new Rect(0, 9, size, size));
-  const currentDayImg = drawing.getImage();
-  return currentDayImg;
+function getHighlightedDate(date, color) {
+  const drawing = new DrawContext()
+  drawing.respectScreenScale = true
+  const size = 50
+  drawing.size = new Size(size, size)
+  drawing.opaque = false
+  drawing.setFillColor(fontColorToday)
+  drawing.fillEllipse(new Rect(1, 1, size - 2, size - 2))
+  drawing.setFont(Font.boldSystemFont(28))
+  drawing.setTextColor(color)  
+  drawing.setTextAlignedCenter()
+  drawing.drawTextInRect(date, new Rect(0, 9, size, size))
+  const currentDayImg = drawing.getImage()
+  return currentDayImg
 }
 
 
@@ -418,5 +420,6 @@ function isFeiertag( ft, ft2, d )
   
   return false
 }
+
 
 //EOF
