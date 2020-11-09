@@ -388,7 +388,7 @@ function getHighlightedDate(date, color) {
   drawing.setFillColor(fontColorToday)
   drawing.fillEllipse(new Rect(1, 1, size - 2, size - 2))
   drawing.setFont(Font.boldSystemFont(28))
-  drawing.setTextColor(color)  
+  if (color) drawing.setTextColor(color)  
   drawing.setTextAlignedCenter()
   drawing.drawTextInRect(date, new Rect(0, 9, size, size))
   const currentDayImg = drawing.getImage()
