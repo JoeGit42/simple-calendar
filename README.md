@@ -32,3 +32,4 @@ Widget is tested tested only a bit.
 - 2020-11-08 CHG: Saturdays, Sundays and Holidays in next and previous month, so also get the right color, but will remain with thin font.
 - 2020-11-08 FIX: Some finetuning, for today circle incl. font color
 - 2020-11-09 FIX: color handling
+- 2010-11-10 ADD: Support of holiday (state dependend)
