@@ -14,6 +14,8 @@ There are several switches to configure the widget. (all in code, not a s parame
 E.g. 
   * US-style (other calculation of weeks, and weeks starts on Sundays)
   * calender weeks are shown, but this can be disabled.
+  * Public holidays (germn: Feiertage) can be shown
+  * Holidays (german: Ferien) can be shown
 
 Widget is tested tested only a bit.
 
