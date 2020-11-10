@@ -2,12 +2,6 @@
 Simple calendar widget to be used in smart stacks
 
 This is a calander widget (only small ones) which I've written for myself. 
-For now (07.11.2020) it's coded quick and dirty.
-
-With numeric parameter you can set an offset for the month.
--1 means the previous month is shown.
-2 means the month after the next month is shown.
-This mechanism allows multiple widget in one stack. So you can swipe through the month.
 
 Layout is clean and simple.
 There are several switches to configure the widget. (all in code, not a s parameter)
@@ -23,6 +17,35 @@ Widget is tested tested only a bit.
 ![](hell.jpg)
 ![](dunkel.jpg)
 
+### Configuration
+Most important configuration is to define the month to show and the state (if you want to see marked holidays)
+Parameters have to be divided by ','
+
+![](parameter.jpg)
+
+#### 1st (and maybe the only parameter) is the nnumeric offset for the month.
+-1 means the previous month is shown.
+2 means the month after the next month is shown.
+This mechanism allows multiple widget in one stack. So you can swipe through the month.
+#### 2nd parameter is state (german: Bundesland)
+2-character abbreviation 
+* BW = Baden-Württemberg
+* BY = Bayern
+* BE = Berlin
+* BB = Brandenburg
+* HB = Bremen
+* HH = Hamburg
+* HE = Hessen
+* MV = Mecklenburg-Vorpommern
+* NI = Niedersachsen
+* NW = Nordrhein-Westfalen
+* RP = Rheinland-Pfalz
+* SL = Saarland
+* SN = Sachsen
+* ST = Sachsen-Anhalt
+* SH = Schleswig-Holstein
+* TH = Thüringen
+
 ### Known Bugs
 
 
@@ -35,3 +58,4 @@ Widget is tested tested only a bit.
 - 2020-11-08 FIX: Some finetuning, for today circle incl. font color
 - 2020-11-09 FIX: color handling
 - 2010-11-10 ADD: Support of holiday (state dependend)
+- 2020-11-10 ADD: state (german:Bundesland) can be configured by widget parameter, no need to touch code
