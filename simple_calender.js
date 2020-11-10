@@ -14,7 +14,6 @@ const showCW =  true            // true: shows number of week
 const styleUS = false           // Showes calendar in US style (1st of the week is Sunday / 1st week in the year is always 1st Jan)
   let markPublicHoliday = true  // does only work for german public holiday (Feiertage)
   let markHoliday = true        // does only work for german holiday (Ferien)
-const areaString = "HE"         // BW, BY, BE, BB, HB, HH, HE, MV, NI, NW, RP, SL, SN, ST, SH, TH
 
 // Fonts and Colors
 const fontHeader = Font.mediumSystemFont(15) 
@@ -45,7 +44,8 @@ const cellCWSizeHori = 24
 
 // Misc
 const forceApiDownload = false
-
+  let wParameter = []
+  let monthShift = 0
 
 // Feiertage (bereitgestellt von https://feiertage-api.de)
 //
@@ -137,12 +137,13 @@ async function createWidget(items) {
   const dfWeekday = dfCreateAndInit(dfWeekdayFormat)
 
   // check parameter (month to display can be adjusted)
-  // -1 shows the last month, 2 shows the month ofter the next month
-  let monthShift = 0
-  let param = args.widgetParameter
-  if (param != null && param.length > 0) {
-    monthShift = parseInt(param)
-  }
+  // state (german: Bundesland) can be given as second parameter
+  // e.g.
+  //  -1, NW   -> last month, holiday of NRW
+  //  0, BY    -> current month, holiday of Bayern
+  // <empty>   -> no paremeter means current month, holiday of Hessen (default)
+  // 2, HE     -> shows the month ofter the next month, holiday of Hessen
+  let parCount = parseInput(args.widgetParameter)
 
   // collect all the necessary data
   const today = new Date()
@@ -538,5 +539,24 @@ function dfCreateAndInit (format) {
   return df
 }
 
+// parses the widget parameters
+function parseInput(input) {
+  // load defaults
+  monthShift = 0    // default
+  areaString = "HE" // default
+
+  if (input != null && input.length > 0) {
+    wParameter = input.split(",")
+    
+    let parCount = wParameter.length
+    
+    // take over the given parameters to global variables
+    if (parCount > 0) { monthShift = parseInt(wParameter[0]) }
+    if (parCount > 1) { areaString = wParameter[1].toUpperCase().trim() }
+    
+    return wParameter.length
+  } 
+  return 0
+}
 
 //EOF
