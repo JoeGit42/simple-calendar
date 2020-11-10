@@ -20,6 +20,7 @@ Widget is tested tested only a bit.
 ### Configuration
 Most important configuration is to define the month to show and the state (if you want to see marked holidays)
 Parameters have to be divided by ','
+Example shows the configuration for the upcoming month, and the state Hessen
 
 ![](parameter.jpg)
 
