@@ -17,9 +17,9 @@ E.g.
 
 Widget is tested tested only a bit.
 
+![](stack.mov)
 ![](hell.jpg)
 ![](dunkel.jpg)
-![](stack.mov)
 
 ### Known Bugs
 
