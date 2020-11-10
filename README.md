@@ -21,7 +21,7 @@ Example shows the configuration for the upcoming month, and the state Hessen
 
 ![](parameter.jpg)
 
-#### 1st (and maybe the only parameter) is the nnumeric offset for the month.
+#### 1st (and maybe the only parameter) is the numeric offset for the month.
 -1 means the previous month is shown.
 2 means the month after the next month is shown.
 This mechanism allows multiple widget in one stack. So you can swipe through the month.
