@@ -4,26 +4,19 @@
 // creator: https://github.com/JoeGit42
 
 const DEBUG = false
+  let debugRow
+  let debugText
 
-// Feiertage (bereitsgestellt von https://feiertage-api.de)
-//
-// Auf der Webseite gibt es einen Spenden-Button, um diesen 
-// tollen Serivce zu unterstützen, der kostenlos bereitgestellt wird
-// 
-// Für jedes Bundesland kann hier eine Liste der Daten für ein bestimmtes Jahr abgefragt werden.
-// Kürzel der Bundesländer:
-// BW, BY, BE, BB, HB, HH, HE, MV, NI, NW, RP, SL, SN, ST, SH, TH
-//
-// Besipiel: https://feiertage-api.de/api/?jahr=2020&nur_land=HE
-//
-const feiertageApiURL = "http://feiertage-api.de/api/?jahr="
-const areaString = "HE"
-  var feiertage = 0
-  var feiertage2 = 0
-
+/////////////////////////////////////////////////////////////
 // Configuration
-const showCW =  true
-const styleUS = false
+/////////////////////////////////////////////////////////////
+const showCW =  true            // true: shows number of week
+const styleUS = false           // Showes calendar in US style (1st of the week is Sunday / 1st week in the year is always 1st Jan)
+  let markPublicHoliday = true  // does only work for german public holiday (Feiertage)
+  let markHoliday = true        // does only work for german holiday (Ferien)
+const areaString = "HE"         // BW, BY, BE, BB, HB, HH, HE, MV, NI, NW, RP, SL, SN, ST, SH, TH
+
+// Fonts and Colors
 const fontHeader = Font.mediumSystemFont(15) 
 const fontCal = Font.mediumSystemFont(10) 
 const fontToday = Font.heavySystemFont(10) 
@@ -36,18 +29,54 @@ const fontColorSun = Color.red()
 const fontColorOtherMonth = Color.gray()
 const fontColorToday = Color.green()
 const fontColorMonth = null  // null will result in default color
+const cellColorHoliday = new Color('bbbbbb', 0.42)
+
+// Date format
 const dfHeaderFormat = "MMMM"
 const dfHeaderCurrentMonthFormat = "d. MMMM"  // will be used, if the shown month is the current one
 const dfHeaderOtherYearFormat = "MMMM yyyy"  // will be used, if the shown month is the current one
 const dfDayFormat = "d"
 const dfWeekdayFormat = "EEEEE"
-const dfWeekday = new DateFormatter().dateFormat = dfWeekdayFormat
+
+// Size of fields
 const cellSizeVertical = 16
 const cellSizeHori = 18
 const cellCWSizeHori = 24
-const markPublicHoliday = true
+
+// Misc
 const forceApiDownload = false
 
+
+// Feiertage (bereitgestellt von https://feiertage-api.de)
+//
+// Auf der Webseite gibt es einen Spenden-Button, um diesen 
+// tollen Serivce zu unterstützen, der kostenlos bereitgestellt wird
+// 
+// Für jedes Bundesland kann hier eine Liste der Daten für ein bestimmtes Jahr abgefragt werden.
+// Kürzel der Bundesländer:
+// BW, BY, BE, BB, HB, HH, HE, MV, NI, NW, RP, SL, SN, ST, SH, TH
+//
+// Beispiel (Daten für Hessen):      https://feiertage-api.de/api/?jahr=2020&nur_land=HE
+// Beispiel (Daten für Deutschland): https://feiertage-api.de/api/?jahr=2020&nur_daten
+//
+const feiertageApiURL = "https://feiertage-api.de/api/?jahr="
+  var ft1, ft2
+  
+// Ferien (bereitgestellt von https://ferien-api.de)
+//
+// Auf der Webseite gibt es einen Spenden-Button, um diesen 
+// tollen Serivce zu unterstützen, der kostenlos bereitgestellt wird
+// 
+// Für jedes Bundesland kann hier eine Liste der Daten (ggf. für ein bestimmtes Jahr) abgefragt werden.
+// Kürzel der Bundesländer:
+// BW, BY, BE, BB, HB, HH, HE, MV, NI, NW, RP, SL, SN, ST, SH, TH
+//
+// Beispiel (Daten für Hessen):      https://ferien-api.de/api/v1/holidays/HE
+//
+const ferienApiURL = "https://ferien-api.de/api/v1/holidays/"
+  var ferien
+  
+// Returns the week of date, calculated according ISO standard
 Date.prototype.getWeekISO = function() {
   var date = new Date(this.getTime());
   date.setHours(0, 0, 0, 0);
@@ -69,7 +98,7 @@ Date.prototype.getWeekUS = function() {
 }
 
 // Returns the week of the date.
-Date.prototype.getWeek = function() {
+Date.prototype.getWeek = function(styleUS) {
   if (styleUS == true) {
     return this.getWeekUS()
   } else {
@@ -84,35 +113,28 @@ if (!config.runsInWidget) await widget.presentSmall()
 Script.setWidget(widget)
 Script.complete()
 
+
+// main function
 async function createWidget(items) {
   let w = new ListWidget()
+  w.setPadding(5,5,5,2)
+
   let cell
 
-
-  // DEBUG
-  let debugRow
-  let debugText
+  // DEBUG init
   if (DEBUG) {
     debugRow = w.addStack()
     debugText = debugRow.addText("DEBUG")
-    debugText.font = Font.mediumSystemFont(8)
+    debugText.font = Font.mediumSystemFont(6)
   }
   // DEBUG_END
   
-  
   // Date string init
-  const dfHeaderOtherYear = new DateFormatter()
-  dfHeaderOtherYear.dateFormat = dfHeaderOtherYearFormat
-  const dfHeaderCurrentMonth = new DateFormatter()
-  dfHeaderCurrentMonth.dateFormat = dfHeaderCurrentMonthFormat
-  const dfHeader = new DateFormatter()
-  dfHeader.dateFormat = dfHeaderFormat
-  const dfDay = new DateFormatter()
-  dfDay.dateFormat = dfDayFormat
-  const dfWeekday = new DateFormatter()
-  dfWeekday.dateFormat = dfWeekdayFormat
-
-  w.setPadding(5,5,5,2)
+  const dfHeaderOtherYear = dfCreateAndInit(dfHeaderOtherYearFormat)
+  const dfHeaderCurrentMonth = dfCreateAndInit(dfHeaderCurrentMonthFormat)
+  const dfHeader = dfCreateAndInit(dfHeaderFormat)
+  const dfDay = dfCreateAndInit(dfDayFormat)
+  const dfWeekday = dfCreateAndInit(dfWeekdayFormat)
 
   // check parameter (month to display can be adjusted)
   // -1 shows the last month, 2 shows the month ofter the next month
@@ -125,84 +147,37 @@ async function createWidget(items) {
   // collect all the necessary data
   const today = new Date()
   const dayToCalculateWith = new Date() // = today, will be configurable as widget-parameter in the future
-  if (monthShift != 0) addMonth(dayToCalculateWith, monthShift)
-  const thisWeek = today.getWeek()
+    if (monthShift != 0) addMonth(dayToCalculateWith, monthShift)
+  const thisWeek = today.getWeek(styleUS)
   const thisMonth = dayToCalculateWith.getMonth()
   const thisYear = dayToCalculateWith.getFullYear()
   const otherYear = (thisMonth == 0) ? thisYear-1 : thisYear+1  // to get public Holidays in previos year or next year 
   const thisMonthFirst = new Date(thisYear, thisMonth, 1)
   const thisMonthFirstWeekday = thisMonthFirst.getDay()  // Sunday = 0, Monday = 1, ...
-  const thisMonthFirstWeek = thisMonthFirst.getWeek() 
+  const thisMonthFirstWeek = thisMonthFirst.getWeek(styleUS) 
   const thisMonthLast = new Date(thisYear, thisMonth + 1, 0)
-  const thisMonthLastWeek = thisMonthLast.getWeek() 
-  const weeksInMonth = weekCount(thisYear, thisMonth, styleUS ? 0 : 1)
-  let cellSizeVert = cellSizeVertical
+  const thisMonthLastWeek = thisMonthLast.getWeek(styleUS) 
+  const weeksInMonth = weekCount(thisYear, thisMonth, styleUS)
   
-  // a bit mor space between the rows, if 5 or 4 weeks are shown
+  // a bit more space between the rows, if 5 or 4 weeks are shown
+  let cellSizeVert = cellSizeVertical
   if (weeksInMonth == 4) { cellSizeVert += cellSizeVertical/4 }
   if (weeksInMonth == 5) { cellSizeVert += 2 }
   
-  // get public holidays for this year and the previous year in January or the next year in December
-  // prepartion for storage of public-holiday info  
-  let fm = FileManager.local()
-  let dir = fm.documentsDirectory()
-  let path = fm.joinPath(dir, "feiertage_" + thisYear + "_" + areaString + ".json")
-  let path2 = fm.joinPath(dir, "feiertage_" + otherYear + "_" + areaString + ".json")
-  let apiURL = feiertageApiURL + thisYear + "&nur_land=" + areaString
-  let apiURL2 = feiertageApiURL + otherYear + "&nur_land=" + areaString
-  let file_exists = true
-  
+  // get holiday info
+  // if it not succeeds, feature will be disabled 
   if (markPublicHoliday) {
-    let r = new Request(apiURL)
-    let r2 = new Request(apiURL2)
-    // file already exists and is from today
-    try {
-      feiertage = JSON.parse(fm.readString(path), null)
-      feiertage2 = JSON.parse(fm.readString(path2), null)
-      if (!feiertage || !feiertage) { 
-        file_exists = false 
-      } else { 
-        // check, if file is from today
-        let fetchTime = new Date(feiertage.dateStr)
-        let fetchTime2 = new Date(feiertage2.dateStr)
-        if (sameDay(fetchTime, today) && sameDay(fetchTime2, today)) { file_exists = true } else { file_exists = false }
-      }
+    markPublicHoliday = await fetchPublicHolidayInfo(thisYear, otherYear, areaString)
+  }
 
-    } catch (err) {
-      file_exists = false
-    }
-    if (forceApiDownload) file_exists = false
+  // get holiday info
+  // if it not succeeds, feature will be disabled 
+  if (markHoliday) {
+    markHoliday = await fetchHolidayInfo(areaString)
+  }
     
-    // If file does not exist, or is outdated, get a new one from feiertage-api.de
-    if (file_exists == false) {
-      try {
-        // Fetch data from feiertage-api.de
-        feiertage = await r.loadJSON()
-        feiertage2 = await r2.loadJSON()
-        feiertage.dateStr = new Date().toJSON();  // timestamp of fetch
-        feiertage2.dateStr = new Date().toJSON();  // timestamp of fetch
-        // Write JSON to iCloud file
-        fm.writeString(path, JSON.stringify(feiertage, null, 2))
-        fm.writeString(path2, JSON.stringify(feiertage2, null, 2))
-      } catch (err) {
-        // API not working :-(
-        markPublicHoliday = false
-      }  
-    }
-  }
-  
   // Prepare an array with the weekday.
-  var weekdayHeader = ["KW", "M", "D", "M", "D", "F", "S", "S"];
-  const weekday = new Date() // will be set to Monday 02.11.2020 (or 1st Nov, if weeks starts on Sunday in US-style
-  if (styleUS == true) { weekday.setDate(1) } else { weekday.setDate(2) }
-  weekday.setMonth(10) // 10=November
-  weekday.setFullYear(2020)
-  
-  // overwrite weekdays with local strings
-  for (var i = 1; i <=7; i++) {
-    weekdayHeader[i] = dfWeekday.string(weekday)
-    addDay(weekday, 1)
-  }
+  weekdayHeader = prepareWeekdayHeader (styleUS)
   
   // first row will be the month
   // e.g. November
@@ -218,12 +193,12 @@ async function createWidget(items) {
   monthHeaderRow.size = new Size(150, 0)
   if (DEBUG){ monthHeaderRow.borderWidth = 1; monthHeaderRow.borderColor = Color.yellow(); }  
   monthHeaderRow.addSpacer(0)
-  let row1 = monthHeaderRow.addText(headerStr)
+  let monthHeaderRowTxt = monthHeaderRow.addText(headerStr)
   monthHeaderRow.addSpacer(0)
   monthHeaderRow.centerAlignContent()
-  row1.font = fontHeader
-  row1.textColor = fontColorMonth
-  row1.centerAlignText()
+  monthHeaderRowTxt.font = fontHeader
+  monthHeaderRowTxt.textColor = fontColorMonth
+  monthHeaderRowTxt.centerAlignText()
   
   w.addSpacer(4)
   
@@ -231,8 +206,6 @@ async function createWidget(items) {
   let dayToPrint = new Date()
   
   if (DEBUG) { fullCal.borderWidth = 1; }
-  
-  //w.addSpacer(20)
   
   if (showCW) {
     // first column 
@@ -253,13 +226,13 @@ async function createWidget(items) {
     cwTxt.textColor = fontColorCW
     cwTxt.centerAlignText()
     setDay(dayToPrint, thisMonthFirst)
-    let weekToShow = dayToPrint.getWeek()
+    let weekToShow = dayToPrint.getWeek(styleUS)
     for (var i = 0; i < weeksInMonth; i++) {
       let cwCell = cwCol.addStack()
       if (DEBUG){ cwCell.borderWidth = 1; cwCell.borderColor = Color.green(); }
       cwCell.size = new Size(cellCWSizeHori, cellSizeVert)
       cwCell.centerAlignContent()
-      weekToShow = dayToPrint.getWeek()
+      weekToShow = dayToPrint.getWeek(styleUS)
       let weekToShowStr = (weekToShow < 10) ? "#0" + weekToShow : "#" + weekToShow
       let cwTxt = cwCell.addText( weekToShowStr )
       cwTxt.font = fontCal
@@ -298,7 +271,7 @@ async function createWidget(items) {
       dayCell.size = new Size(cellSizeHori, cellSizeVert)
       dayCell.centerAlignContent()
       let cellTxt = dayCell.addText( dfDay.string(dayToPrint) )
-      setCellStyle(dayToPrint, thisMonthFirst, dayCell, cellTxt, feiertage) 
+      setCellStyle(dayToPrint, thisMonthFirst, dayCell, cellTxt) 
       addDay(dayToPrint, 7) // prepare for the next week/row
     }
   } 
@@ -315,10 +288,6 @@ function sameDay(d1, d2) {
 
 // Change a weekday to have sunday = 7 (instead of 0): Monday = 1, Sunday = 7
 function getDay1(d) { return (d==0) ? 7 : d}
-
-// does not work in Ocotber, due to time shift.
-// e.g. 19. Oct + 7 days results in 25. Oct (23:00)
-//function addDay(d, diff) { d.setTime(d.getTime() + 86400000 * diff) } 
 
 // days will be added (can be negative)
 function addDay(d, diff) {
@@ -352,7 +321,7 @@ function weekCount(year, month_number, startDayOfWeek) {
 }
 
 // set style for the calender
-function setCellStyle(day, reference, cellStack, cellText, feiertage) {
+function setCellStyle(day, reference, cellStack, cellText) {
     const today = new Date()
     
   // different style for days of previous and next month 
@@ -366,19 +335,26 @@ function setCellStyle(day, reference, cellStack, cellText, feiertage) {
     if (day.getDay() == 0 && fontColorSun) cellText.textColor = fontColorSun
     cellText.font = fontCal
   }
-  if (markPublicHoliday && feiertage && feiertage2) {
-    if (isFeiertag (feiertage, feiertage2, day) && fontColorSun) cellText.textColor = fontColorSun
+  
+  if (markPublicHoliday && ft1 && ft2) {
+    if (isPublicHoliday (day) && fontColorSun) cellText.textColor = fontColorSun
   }
+  
+  if (markHoliday && ferien) {
+    if (isHoliday (day) ) cellStack.backgroundColor = cellColorHoliday 
+  }
+    
   // today get a nice circle
   if ( sameDay(day, today) ) {
     cellText.font = fontToday
     const highlightedDate = getHighlightedDate(cellText.text, cellText.textColor)
-    cellText.text = ""
+    cellText.text = "" // delete text, as circle includes the text
     cellStack.addImage(highlightedDate);
   }
   cellText.centerAlignText()
 }
 
+// creates circle for a highlighted day
 function getHighlightedDate(date, color) {
   const drawing = new DrawContext()
   drawing.respectScreenScale = true
@@ -395,19 +371,135 @@ function getHighlightedDate(date, color) {
   return currentDayImg
 }
 
+// Preparation of Header line with Weekdays - localized
+function prepareWeekdayHeader (styleUS) {
+  let headerArray = ["KW", "M", "D", "M", "D", "F", "S", "S"];
+  const weekday = new Date() // will be set to Monday 02.11.2020 (or 1st Nov, if weeks starts on Sunday in US-style
+  const dfWeekday = dfCreateAndInit (dfWeekdayFormat)
+  
+  if (styleUS == true) { weekday.setDate(1) } else { weekday.setDate(2) }
+  weekday.setMonth(10) // 10=November
+  weekday.setFullYear(2020)
+  
+  // overwrite weekdays with local strings
+  for (var i = 1; i <=7; i++) {
+    headerArray[i] = dfWeekday.string(weekday)
+    addDay(weekday, 1)
+  }
+  
+  return headerArray
+}
 
-function isFeiertag( ft, ft2, d )
-{
+// fetches the holiday (german: Ferien) info and does caching
+async function fetchHolidayInfo(areaCode) {
+  // get holidays for this area
+
+  let areaStr = areaCode.toUpperCase()
+  let fm = FileManager.local()
+  let dir = fm.documentsDirectory()
+  let path = fm.joinPath(dir, "ferien_" + areaStr + ".json")
+  let apiURL = ferienApiURL + areaStr
+  let file_exists = true
+  let req = new Request(apiURL)
+  const today = new Date()
+
+  // check if file already exists and is from today
+  try {
+    ferien = JSON.parse(fm.readString(path), null)
+    if (!ferien) { 
+      file_exists = false 
+    } else { 
+      // check, if file is from today
+      let fetchTime = new Date(ferien.dateStr)
+      if (sameDay(fetchTime, today)) { file_exists = true } else { file_exists = false }
+    }
+  } catch (err) {
+    file_exists = false 
+  }
+
+  if (forceApiDownload) file_exists = false
+  
+  // If file does not exist, or is outdated, get a new one from feiertage-api.de
+  if (file_exists == false) {
+    try {
+      // Fetch data from feiertage-api.de
+      ferien = await req.loadJSON()
+      ferien.dateStr = new Date().toJSON();  // timestamp of fetch
+      // Write JSON to iCloud file
+      fm.writeString(path, JSON.stringify(ferien, null, 2))
+    } catch (err) {
+      // API not working :-(
+      return  false
+    }  
+  }
+
+  return true
+}
+
+// fetches the public holiday (german: Feiertage) info and does caching
+async function fetchPublicHolidayInfo(thisYear, otherYear, areaCode) {
+  // get public holidays for this year and the previous year in January or the next year in December
+
+  let areaStr = areaCode.toUpperCase()
+  let fm = FileManager.local()
+  let dir = fm.documentsDirectory()
+  let path = fm.joinPath(dir, "feiertage_" + thisYear + "_" + areaStr + ".json")
+  let path2 = fm.joinPath(dir, "feiertage_" + otherYear + "_" + areaStr + ".json")
+  let apiURL = feiertageApiURL + thisYear + "&nur_land=" + areaStr
+  let apiURL2 = feiertageApiURL + otherYear + "&nur_land=" + areaStr
+  let file_exists = true
+  let req = new Request(apiURL)
+  let req2 = new Request(apiURL2)
+  const today = new Date()
+
+  // check if file already exists and is from today
+  try {
+    ft1 = JSON.parse(fm.readString(path), null)
+    ft2 = JSON.parse(fm.readString(path2), null)
+    if (!ft1 || !ft2) { 
+      file_exists = false 
+    } else { 
+      // check, if file is from today
+      let fetchTime = new Date(ft1.dateStr)
+      let fetchTime2 = new Date(ft2.dateStr)
+      if (sameDay(fetchTime, today) && sameDay(fetchTime2, today)) { file_exists = true } else { file_exists = false }
+    }
+  } catch (err) {
+    file_exists = false 
+  }
+
+  if (forceApiDownload) file_exists = false
+  
+  // If file does not exist, or is outdated, get a new one from feiertage-api.de
+  if (file_exists == false) {
+    try {
+      // Fetch data from feiertage-api.de
+      ft1 = await req.loadJSON()
+      ft2 = await req2.loadJSON()
+      ft1.dateStr = new Date().toJSON();  // timestamp of fetch
+      ft2.dateStr = new Date().toJSON();  // timestamp of fetch
+      // Write JSON to iCloud file
+      fm.writeString(path, JSON.stringify(ft1, null, 2))
+      fm.writeString(path2, JSON.stringify(ft2, null, 2))
+    } catch (err) {
+      // API not working :-(
+      return  false
+    }  
+  }
+
+  return true
+}
+
+// Is given date a public holiday (checks two years)
+function isPublicHoliday( d ){
   // convert d to a string, which compares to the 'datum' in the json-array
-  const dfJsonDateFormat = "yyyy-MM-dd"
-  const dfJsonDate = new DateFormatter()
-  dfJsonDate.dateFormat = dfJsonDateFormat
+  const dfJsonDate = dfCreateAndInit("yyyy-MM-dd")
   
   checkDate = dfJsonDate.string(d)
   
   // check the current year
-  for (feiertagsname in ft) {
-    if( ft[feiertagsname].datum == checkDate ) {
+  for (feiertagsname in ft1) {
+    if( ft1[feiertagsname].datum == checkDate ) {
       return feiertagsname
     }
   }
@@ -419,6 +511,31 @@ function isFeiertag( ft, ft2, d )
   }
   
   return false
+}
+
+function isHoliday( d ){
+  var dStartStr, dEndStr
+
+  for (index in ferien) {
+    dStartStr = "" + ferien[index].start
+    dStart =  new Date(dStartStr)
+    dStart.setHours(0)
+    dEndStr = "" + ferien[index].end
+    dEnd = new Date(dEndStr) 
+    dEnd.setHours(0)
+    
+    if( d >= dStart && d <= dEnd ) {
+      return true
+    }
+  }
+  return false
+}
+
+// creates and inits a DateFormatter
+function dfCreateAndInit (format) {
+  const df = new DateFormatter()
+  df.dateFormat = format
+  return df
 }
 
 
