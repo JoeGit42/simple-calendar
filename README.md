@@ -4,14 +4,11 @@ Simple calendar widget to be used in smart stacks
 This is a calander widget (only small ones) which I've written for myself. 
 
 Layout is clean and simple.
-There are several switches to configure the widget. (all in code, not a s parameter)
+There are several switches to configure the widget. (most of them in code, 2 important ones as widget parameter)
 E.g. 
   * US-style (other calculation of weeks, and weeks starts on Sundays)
   * calender weeks are shown, but this can be disabled.
-  * Public holidays (germn: Feiertage) can be shown
-  * Holidays (german: Ferien) can be shown
-
-Widget is tested tested only a bit.
+  * State (german:Bundesland) to show Public holidays (german: Feiertage) and Holidays (german: Ferien)
 
 ![](stack.mov)
 ![](hell.jpg)
@@ -50,10 +47,8 @@ This mechanism allows multiple widget in one stack. So you can swipe through the
 ### Known Bugs
 
 
-### InitialVersion (07.11.2020)
-
-
 ### ChangeLog
+- 2020-11-07 initial version
 - 2020-11-08 ADD: Support of public holidays (uses feiertage-api.de). Indicated with same color as Sundays.
 - 2020-11-08 CHG: Saturdays, Sundays and Holidays in next and previous month, so also get the right color, but will remain with thin font.
 - 2020-11-08 FIX: Some finetuning, for today circle incl. font color
