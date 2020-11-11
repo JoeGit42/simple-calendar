@@ -10,17 +10,17 @@ const DEBUG = false
 /////////////////////////////////////////////////////////////
 // Configuration
 /////////////////////////////////////////////////////////////
-const showCW =  true            // true: shows number of week
-const styleUS = false           // Showes calendar in US style (1st of the week is Sunday / 1st week in the year is always 1st Jan)
+  let showCW =  true            // true: shows number of week
+  let styleUS = false           // Showes calendar in US style (1st of the week is Sunday / 1st week in the year is always 1st Jan)
   let markPublicHoliday = true  // does only work for german public holiday (Feiertage)
   let markHoliday = true        // does only work for german holiday (Ferien)
 
 // Fonts and Colors
 const fontHeader = Font.mediumSystemFont(15) 
-const fontCal = Font.mediumSystemFont(10) 
-const fontToday = Font.heavySystemFont(10) 
-const fontCalOtherMonth = Font.thinSystemFont(10) 
-const fontWeekday = Font.mediumSystemFont(10) 
+const fontCal = Font.mediumSystemFont(11) 
+const fontToday = Font.heavySystemFont(11) 
+const fontCalOtherMonth = Font.thinSystemFont(11) 
+const fontWeekday = Font.mediumSystemFont(11)
 const fontColorWeekdays = Color.gray()
 const fontColorCW = Color.gray()
 const fontColorSat = null // null will result in default color
@@ -38,14 +38,15 @@ const dfDayFormat = "d"
 const dfWeekdayFormat = "EEEEE"
 
 // Size of fields
-const cellSizeVertical = 16
+const cellSizeVertical = 17
 const cellSizeHori = 18
-const cellCWSizeHori = 24
+const cellCWSizeHori = 25
 
 // Misc
 const forceApiDownload = false
   let wParameter = []
   let monthShift = 0
+  let areaString = "HE"
 
 // Feiertage (bereitgestellt von https://feiertage-api.de)
 //
@@ -118,7 +119,7 @@ Script.complete()
 async function createWidget(items) {
   let w = new ListWidget()
   w.setPadding(5,5,5,2)
-
+  
   let cell
 
   // DEBUG init
@@ -144,6 +145,8 @@ async function createWidget(items) {
   // <empty>   -> no paremeter means current month, holiday of Hessen (default)
   // 2, HE     -> shows the month ofter the next month, holiday of Hessen
   let parCount = parseInput(args.widgetParameter)
+
+  setWidgetURL(w, areaString)
 
   // collect all the necessary data
   const today = new Date()
@@ -194,7 +197,7 @@ async function createWidget(items) {
   monthHeaderRow.size = new Size(150, 0)
   if (DEBUG){ monthHeaderRow.borderWidth = 1; monthHeaderRow.borderColor = Color.yellow(); }  
   monthHeaderRow.addSpacer(0)
-  let monthHeaderRowTxt = monthHeaderRow.addText(headerStr)
+  let monthHeaderRowTxt = monthHeaderRow.addText(headerStr.toUpperCase())
   monthHeaderRow.addSpacer(0)
   monthHeaderRow.centerAlignContent()
   monthHeaderRowTxt.font = fontHeader
@@ -554,9 +557,55 @@ function parseInput(input) {
     if (parCount > 0) { monthShift = parseInt(wParameter[0]) }
     if (parCount > 1) { areaString = wParameter[1].toUpperCase().trim() }
     
+    // special handling for NRW
+    if (areaString == "NRW") areaString = "NW"
+    
+    // special handling for US
+    if (areaString == "US") {
+      styleUS = true
+      markPublicHoliday = false  // does only work for german public holiday (Feiertage)
+      markHoliday = false        // does only work for german  holiday (Ferien)
+    }
+    
     return wParameter.length
   } 
   return 0
+}
+
+// sets URL of widget, to forward user to Kalender after wwidget-klick
+function setWidgetURL(w, areaCode) {
+  var baseURL = "https://www.schulferien.org/Kalender_mit_Ferien/#BL#.html"
+  var shortStr = areaCode
+  var longStr = ""
+  var replaceStr = "#BL#"
+  var bl = [
+    ["BW", "Baden_Wuerttemberg"],
+    ["BY", "Bayern"],
+    ["BE", "Berlin"],
+    ["BB", "Brandenburg"],
+    ["HB", "Bremen"],
+    ["HH", "Hamburg"],
+    ["HE", "Hessen"],
+    ["MV", "Mecklenburg_Vorpommern"],
+    ["NI", "Niedersachsen"],
+    ["NW", "Nordrhein_Westfalen"],
+    ["RP", "Rheinland_Pfalz"],
+    ["SL", "Saarland"],
+    ["SN", "Sachsen"],
+    ["ST", "Sachsen_Anhalt"],
+    ["SH", "Schleswig_Holstein"],
+    ["TH", "Thueringen"]
+  ];
+
+  if (styleUS) {
+    w.url = "https://www.timeanddate.com/calendar/?country=1"    
+  } else {
+    for (i=0; i<16; i++) {
+      if (shortStr == bl[i][0]) longStr = bl[i][1]
+    }
+    w.url = baseURL.replace(replaceStr, longStr)
+  }
+  
 }
 
 //EOF
