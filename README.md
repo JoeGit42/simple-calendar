@@ -41,6 +41,7 @@ This mechanism allows multiple widget in one stack. So you can swipe through the
 * ST = Sachsen-Anhalt
 * SH = Schleswig-Holstein
 * TH = Thüringen
+* US = USA (att: special handling, calender get's US style, and holidays are not supported)
 
 ### Known Bugs
 
