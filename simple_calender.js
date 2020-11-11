@@ -161,7 +161,7 @@ async function createWidget(items) {
   const thisMonthFirstWeek = thisMonthFirst.getWeek(styleUS) 
   const thisMonthLast = new Date(thisYear, thisMonth + 1, 0)
   const thisMonthLastWeek = thisMonthLast.getWeek(styleUS) 
-  const weeksInMonth = weekCount(thisYear, thisMonth, styleUS)
+  const weeksInMonth = weekCount(thisYear, thisMonth, styleUS ? 0 : 1)
   
   // a bit more space between the rows, if 5 or 4 weeks are shown
   let cellSizeVert = cellSizeVertical
