@@ -10,9 +10,7 @@ E.g.
   * calender weeks are shown, but this can be disabled.
   * State (german:Bundesland) to show Public holidays (german: Feiertage) and Holidays (german: Ferien)
 
-![](stack.mov)
-![](hell.jpg)
-![](dunkel.jpg)
+![](hell.mov) ![](dunkel.mov)
 
 ### Configuration
 Most important configuration is to define the month to show and the state (if you want to see marked holidays)
@@ -55,3 +53,6 @@ This mechanism allows multiple widget in one stack. So you can swipe through the
 - 2020-11-09 FIX: color handling
 - 2010-11-10 ADD: Support of holiday (state dependend)
 - 2020-11-10 ADD: state (german:Bundesland) can be configured by widget parameter, no need to touch code
+- 2020-11-17 CHG: increased font size, month in upper case
+- 2020-11-17 ADD: to support us, you can give "us" as state (US szyle calender will be enabled in this case, and holidays will not be shown - maybe in the future, if there's a request)
+- 2020-11-17 ADD: Widget get's a reasonable link (forward to web calendar which fits to your region)
