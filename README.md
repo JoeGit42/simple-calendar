@@ -57,3 +57,4 @@ This mechanism allows multiple widget in one stack. So you can swipe through the
 - 2020-11-17 CHG: increased font size, month in upper case
 - 2020-11-17 ADD: to support us, you can give "us" as state (US szyle calender will be enabled in this case, and holidays will not be shown - maybe in the future, if there's a request)
 - 2020-11-11 ADD: Widget get's a reasonable link (forward to web calendar which fits to your region)
+- 2020-11-11 FIX: last week in month lost in some cases
