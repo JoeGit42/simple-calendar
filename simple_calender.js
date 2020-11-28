@@ -3,9 +3,55 @@
 // icon-color: gray; icon-glyph: calendar;
 // creator: https://github.com/JoeGit42
 
-const DEBUG = false
-  let debugRow
-  let debugText
+//////////////////////////////////////////////////////////////////////////////////////////////
+// Description of this widget
+// ⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺
+// Simple calendar widget to be used in smart stacks
+// 
+// Layout is clean and simple. There are several switches to configure the widget. 
+// (most of them in code, 2 important ones as widget parameter) E.g.
+//   • US-style (other calculation of weeks, and weeks starts on Sundays)
+//   • calender weeks are shown, but this can be disabled.
+//   • State (german:Bundesland) to show Public holidays (german: Feiertage) and Holidays (german: Ferien)
+//
+// Installation/Configuration
+// ⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺
+// Most important configuration is to define the month to show and the state (if you want to see marked holidays) 
+// Parameters have to be divided by ',' Example shows the configuration for the upcoming month, and the state Hessen
+// 
+// 1st (and maybe the only parameter) is the numeric offset for the month.
+//   • -1 means the previous month is shown. 
+//   • 2 means the month after the next month is shown. 
+//   • This mechanism allows multiple widget in one stack. So you can swipe through the month.
+// 
+// 2nd parameter is state (german: Bundesland)
+//   • 2-character abbreviation
+//     BW = Baden-Württemberg
+//     BY = Bayern
+//     BE = Berlin
+//     BB = Brandenburg
+//     HB = Bremen
+//     HH = Hamburg
+//     HE = Hessen
+//     MV = Mecklenburg-Vorpommern
+//     NI = Niedersachsen
+//     NW = Nordrhein-Westfalen
+//     RP = Rheinland-Pfalz
+//     SL = Saarland
+//     SN = Sachsen
+//     ST = Sachsen-Anhalt
+//     SH = Schleswig-Holstein
+//     TH = Thüringen
+//     US = USA (att: special handling, calender get's US style, and holidays are not supported)
+//
+// 
+// ToDo / Ideas
+// ⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺
+// (1) Support of medium size widget (2 month-sheets next to each other)
+// (2) Support of US holidays
+// 
+//////////////////////////////////////////////////////////////////////////////////////////////
+
 
 /////////////////////////////////////////////////////////////
 // Configuration
@@ -14,13 +60,34 @@ const DEBUG = false
   let styleUS = false           // Showes calendar in US style (1st of the week is Sunday / 1st week in the year is always 1st Jan)
   let markPublicHoliday = true  // does only work for german public holiday (Feiertage)
   let markHoliday = true        // does only work for german holiday (Ferien)
+  let showHolidayIcons = true   // shows emojis for well known public holidays
+
+// Sizes for small/medium widget
+const S_FONT_SIZE_HEADER    =  15
+const S_FONT_SIZE_CAL       =  11
+const S_SPACER_AFTER_HEADER =   4
+const S_HEADER_WIDTH        = 150
+const S_CELL_SIZE_HEIGHT    =  17
+const S_CELL_SIZE_WIDTH     =  18
+const S_CELL_SIZE_CW_WIDTH  =  25
+
+// Sizes for large widget (just doubling the values works pretty well)
+const L_FONT_SIZE_HEADER    = 2.2 * S_FONT_SIZE_HEADER
+const L_FONT_SIZE_CAL       = 2.2 * S_FONT_SIZE_CAL
+const L_SPACER_AFTER_HEADER = 2.2 * S_SPACER_AFTER_HEADER
+const L_HEADER_WIDTH        = 2.2 * S_HEADER_WIDTH
+const L_CELL_SIZE_HEIGHT    = 2.2 * S_CELL_SIZE_HEIGHT
+const L_CELL_SIZE_WIDTH     = 2.2 * S_CELL_SIZE_WIDTH
+const L_CELL_SIZE_CW_WIDTH  = 2.2 * S_CELL_SIZE_CW_WIDTH
 
 // Fonts and Colors
-const fontHeader = Font.mediumSystemFont(15) 
-const fontCal = Font.mediumSystemFont(11) 
-const fontToday = Font.heavySystemFont(11) 
-const fontCalOtherMonth = Font.thinSystemFont(11) 
-const fontWeekday = Font.mediumSystemFont(11)
+let fontHeader = Font.mediumSystemFont(L_FONT_SIZE_HEADER) 
+let fontCal = Font.mediumSystemFont(L_FONT_SIZE_CAL) 
+let fontToday = Font.heavySystemFont(L_FONT_SIZE_CAL) 
+let fontCalOtherMonth = Font.thinSystemFont(L_FONT_SIZE_CAL) 
+let fontWeekday = Font.mediumSystemFont(L_FONT_SIZE_CAL)
+let spacerAfterHeader = L_SPACER_AFTER_HEADER
+let headerWidth = L_HEADER_WIDTH
 const fontColorWeekdays = Color.gray()
 const fontColorCW = Color.gray()
 const fontColorSat = null // null will result in default color
@@ -30,17 +97,17 @@ const fontColorToday = Color.green()
 const fontColorMonth = null  // null will result in default color
 const cellColorHoliday = new Color('bbbbbb', 0.42)
 
+// Size of fields
+let cellSizeHeight = L_CELL_SIZE_HEIGHT
+let cellSizeWidth = L_CELL_SIZE_WIDTH
+let cellCWSizeWidth = L_CELL_SIZE_CW_WIDTH
+
 // Date format
 const dfHeaderFormat = "MMMM"
 const dfHeaderCurrentMonthFormat = "d. MMMM"  // will be used, if the shown month is the current one
 const dfHeaderOtherYearFormat = "MMMM yyyy"  // will be used, if the shown month is the current one
 const dfDayFormat = "d"
 const dfWeekdayFormat = "EEEEE"
-
-// Size of fields
-const cellSizeVertical = 17
-const cellSizeHori = 18
-const cellCWSizeHori = 25
 
 // Misc
 const forceApiDownload = false
@@ -76,6 +143,30 @@ const feiertageApiURL = "https://feiertage-api.de/api/?jahr="
 //
 const ferienApiURL = "https://ferien-api.de/api/v1/holidays/"
   var ferien
+  var ferienFromAPI
+
+// Days which can be displayed as Emoji
+// variable days will be added in initEmojiDays()
+let commonDays = [
+    [ 1,  1, "🧨"],
+    [ 6,  1, "👑"],
+    [14,  2, "💝"],  // Valentine's day
+    [ 1,  5, "🙅🏼‍♂️"],  // Tag der Arbeit, German Labour day
+    [17,  7, "😀"],  // World Emoji Day
+    [ 3, 10, "🇩🇪"],  // Tag der deutschen Einheit
+    [31, 10, "🎃"],
+    [ 6, 12, "🎅🏼"],
+    [24, 12, "🎄"],
+    [25, 12, "🤶🏼"],
+    [26, 12, "🎁"],
+    [31, 12, "🎉"]
+  ];
+  
+  
+const DEBUG = false
+  let debugRow
+  let debugText
+
   
 // Returns the week of date, calculated according ISO standard
 Date.prototype.getWeekISO = function() {
@@ -110,10 +201,42 @@ Date.prototype.getWeek = function(styleUS) {
 
 // small widget instance
 let widget = await createWidget()
-if (!config.runsInWidget) await widget.presentSmall()
+if (!config.runsInWidget) await widget.presentLarge()
 Script.setWidget(widget)
 Script.complete()
 
+function globalInit() {      
+  // init for app environment is done at decalration
+  if (config.runsInWidget) {
+    switch (config.widgetFamily) {
+      case 'small':
+      case 'medium':
+        fontHeader = Font.mediumSystemFont(S_FONT_SIZE_HEADER)
+        fontCal = Font.mediumSystemFont(S_FONT_SIZE_CAL)
+        fontToday = Font.heavySystemFont(S_FONT_SIZE_CAL)
+        fontCalOtherMonth = Font.thinSystemFont(S_FONT_SIZE_CAL)
+        fontWeekday = Font.mediumSystemFont(S_FONT_SIZE_CAL)
+        spacerAfterHeader = S_SPACER_AFTER_HEADER  
+        cellSizeHeight = S_CELL_SIZE_HEIGHT
+        cellSizeWidth   = (!showCW) ? 1.2 * S_CELL_SIZE_WIDTH    : S_CELL_SIZE_WIDTH
+        cellCWSizeWidth = (!showCW) ? 0.1 * S_CELL_SIZE_CW_WIDTH : S_CELL_SIZE_CW_WIDTH
+        headerWidth = S_HEADER_WIDTH              
+        break;
+      case 'large':
+      default:
+        fontHeader = Font.mediumSystemFont(L_FONT_SIZE_HEADER) 
+        fontCal = Font.mediumSystemFont(L_FONT_SIZE_CAL)
+        fontToday = Font.heavySystemFont(L_FONT_SIZE_CAL) 
+        fontCalOtherMonth = Font.thinSystemFont(L_FONT_SIZE_CAL)
+        fontWeekday = Font.mediumSystemFont(L_FONT_SIZE_CAL) 
+        spacerAfterHeader = L_SPACER_AFTER_HEADER 
+        cellSizeHeight = L_CELL_SIZE_HEIGHT
+        cellSizeWidth   = (!showCW) ? 1.2 * L_CELL_SIZE_WIDTH    : L_CELL_SIZE_WIDTH
+        cellCWSizeWidth = (!showCW) ? 0.1 * L_CELL_SIZE_CW_WIDTH : L_CELL_SIZE_CW_WIDTH
+        headerWidth = L_HEADER_WIDTH
+    }   
+  }
+}
 
 // main function
 async function createWidget(items) {
@@ -129,6 +252,8 @@ async function createWidget(items) {
     debugText.font = Font.mediumSystemFont(6)
   }
   // DEBUG_END
+  
+  globalInit()
   
   // Date string init
   const dfHeaderOtherYear = dfCreateAndInit(dfHeaderOtherYearFormat)
@@ -162,11 +287,11 @@ async function createWidget(items) {
   const thisMonthLast = new Date(thisYear, thisMonth + 1, 0)
   const thisMonthLastWeek = thisMonthLast.getWeek(styleUS) 
   const weeksInMonth = weekCount(thisYear, thisMonth, styleUS ? 0 : 1)
-  
+    
   // a bit more space between the rows, if 5 or 4 weeks are shown
-  let cellSizeVert = cellSizeVertical
-  if (weeksInMonth == 4) { cellSizeVert += cellSizeVertical/4 }
-  if (weeksInMonth == 5) { cellSizeVert += 2 }
+  //cellSizeVert = cellSizeHeight
+  if (weeksInMonth == 4) { cellSizeHeight += cellSizeHeight/4 }
+  if (weeksInMonth == 5) { cellSizeHeight += 2 }
   
   // get holiday info
   // if it not succeeds, feature will be disabled 
@@ -179,6 +304,10 @@ async function createWidget(items) {
   if (markHoliday) {
     markHoliday = await fetchHolidayInfo(areaString)
   }
+  
+  // Prepare the days, which are replaced with Emojis
+  initEmojiDays(dayToCalculateWith)
+
     
   // Prepare an array with the weekday.
   weekdayHeader = prepareWeekdayHeader (styleUS)
@@ -194,7 +323,7 @@ async function createWidget(items) {
   }
    
   let monthHeaderRow = w.addStack()
-  monthHeaderRow.size = new Size(150, 0)
+  monthHeaderRow.size = new Size(headerWidth, 0)
   if (DEBUG){ monthHeaderRow.borderWidth = 1; monthHeaderRow.borderColor = Color.yellow(); }  
   monthHeaderRow.addSpacer(0)
   let monthHeaderRowTxt = monthHeaderRow.addText(headerStr.toUpperCase())
@@ -204,7 +333,7 @@ async function createWidget(items) {
   monthHeaderRowTxt.textColor = fontColorMonth
   monthHeaderRowTxt.centerAlignText()
   
-  w.addSpacer(4)
+  w.addSpacer(spacerAfterHeader)
   
   let fullCal = w.addStack()
   let dayToPrint = new Date()
@@ -223,7 +352,7 @@ async function createWidget(items) {
     cwCol.layoutVertically()
     cwCol.centerAlignContent()
     let cwCell = cwCol.addStack()
-    cwCell.size = new Size(cellCWSizeHori, cellSizeVert)
+    cwCell.size = new Size(cellCWSizeWidth, cellSizeHeight)
     cwCell.centerAlignContent()
     let cwTxt = cwCell.addText(" ") // empty cell 
     cwTxt.font = fontCal
@@ -234,7 +363,7 @@ async function createWidget(items) {
     for (var i = 0; i < weeksInMonth; i++) {
       let cwCell = cwCol.addStack()
       if (DEBUG){ cwCell.borderWidth = 1; cwCell.borderColor = Color.green(); }
-      cwCell.size = new Size(cellCWSizeHori, cellSizeVert)
+      cwCell.size = new Size(cellCWSizeWidth, cellSizeHeight)
       cwCell.centerAlignContent()
       weekToShow = dayToPrint.getWeek(styleUS)
       let weekToShowStr = (weekToShow < 10) ? "#0" + weekToShow : "#" + weekToShow
@@ -242,10 +371,10 @@ async function createWidget(items) {
       cwTxt.font = fontCal
       cwTxt.leftAlignText()
       if (thisWeek == weekToShow && today.getFullYear() == dayToCalculateWith.getFullYear()) { cwTxt.textColor = fontColorToday } else {  cwTxt.textColor = fontColorCW }
-      addDay(dayToPrint, 7) // prepare for the next week/row
+      dayToPrint = addDay(dayToPrint, 7) // prepare for the next week/row
     }
   } else { // some space instead of calender weeks
-    fullCal.addSpacer(15)
+    fullCal.addSpacer(cellCWSizeWidth)
   }
   
   // now we come to the numbers 
@@ -255,13 +384,13 @@ async function createWidget(items) {
 
   for (var wd = 1; wd <= 7; wd++) { // one column for each weekday
     setDay(dayToPrint, thisMonthFirst)
-    addDay(dayToPrint, (diff * (-1)) + (wd-1))  // set the day to the first day in the week (might be the previous month in the 1st week of the month)
+    dayToPrint = addDay(dayToPrint, (diff * (-1)) + (wd-1))  // set the day to the first day in the week (might be the previous month in the 1st week of the month)
     let wdCol = fullCal.addStack()
     if (DEBUG){ wdCol.borderWidth = 1; wdCol.borderColor = Color.red(); }
     wdCol.layoutVertically()
     wdCol.centerAlignContent()
     let dayCell = wdCol.addStack()
-    dayCell.size = new Size(cellSizeHori, cellSizeVert)
+    dayCell.size = new Size(cellSizeWidth, cellSizeHeight)
     dayCell.centerAlignContent()
     let cellTxt = dayCell.addText(weekdayHeader[wd])
     cellTxt.font = fontWeekday
@@ -272,11 +401,11 @@ async function createWidget(items) {
     for (var r = 0; r < weeksInMonth; r++) {
       let dayCell = wdCol.addStack()
       if (DEBUG){ dayCell.borderWidth = 1; dayCell.borderColor = Color.green(); }
-      dayCell.size = new Size(cellSizeHori, cellSizeVert)
+      dayCell.size = new Size(cellSizeWidth, cellSizeHeight)
       dayCell.centerAlignContent()
       let cellTxt = dayCell.addText( dfDay.string(dayToPrint) )
       setCellStyle(dayToPrint, thisMonthFirst, dayCell, cellTxt) 
-      addDay(dayToPrint, 7) // prepare for the next week/row
+      dayToPrint = addDay(dayToPrint, 7) // prepare for the next week/row
     }
   } 
   
@@ -295,9 +424,11 @@ function getDay1(d) { return (d==0) ? 7 : d}
 
 // days will be added (can be negative)
 function addDay(d, diff) {
- d2 = new Date(d.getFullYear(), d.getMonth(), d.getDate() + diff)
- d.setTime( d2.getTime() )
- }
+  d2 = new Date(d.getFullYear(), d.getMonth(), d.getDate() + diff)
+  //d.setTime( d2.getTime() )
+  return d2
+}
+
 
 // set d1 to the same time as d2
 function setDay(d1, d2) { d1.setTime(d2.getTime()) }
@@ -326,7 +457,10 @@ function weekCount(year, month_number, startDayOfWeek) {
 
 // set style for the calender
 function setCellStyle(day, reference, cellStack, cellText) {
-    const today = new Date()
+  const today = new Date()
+  
+  //check if date can be replaced by emoji
+  if (showHolidayIcons)  cellText.text = getEmoji(day, cellText.text)
     
   // different style for days of previous and next month 
   if (day.getMonth() != reference.getMonth()) {
@@ -367,18 +501,66 @@ function getHighlightedDate(date, color) {
   drawing.opaque = false
   drawing.setFillColor(fontColorToday)
   drawing.fillEllipse(new Rect(1, 1, size - 2, size - 2))
-  drawing.setFont(Font.boldSystemFont(28))
+  drawing.setFont(Font.boldSystemFont(30))
   if (color) drawing.setTextColor(color)  
   drawing.setTextAlignedCenter()
-  drawing.drawTextInRect(date, new Rect(0, 9, size, size))
+  drawing.drawTextInRect(date, new Rect(0, 6, size, size))
   const currentDayImg = drawing.getImage()
   return currentDayImg
+}
+
+
+function initEmojiDays(date) {
+  // Special hanbdling for days to calculate
+  // 1. Advent 
+  let xmasEve = new Date(date.getFullYear(), 11, 24)
+  let diff = ((-3) * 7) + ((-1)*xmasEve.getDay())
+  xmasEve = addDay(xmasEve, diff) // xmasEve becomes 1st Advent
+  commonDays.push([xmasEve.getDate(), (xmasEve.getMonth())+1, "🕯"])
+
+  // Easter Monday  
+  let EasterMonday = getDate4Holidaystring("Ostermontag")
+  if (EasterMonday) commonDays.push([EasterMonday.getDate(), (EasterMonday.getMonth())+1, "🐰"])
+
+  // Good Friday
+  if (EasterMonday) {
+    let GoodFriday = addDay(EasterMonday, -3)
+    commonDays.push([GoodFriday.getDate(), (GoodFriday.getMonth())+1, "✝️"])
+  }
+  
+  // Karneval ("Altweiber")
+  if (EasterMonday) {
+    let Altweiber = addDay(EasterMonday, -53)
+    commonDays.push([Altweiber.getDate(), (Altweiber.getMonth())+1, "🎭"])
+  }
+  
+  // Black Friday (the day after the 4th Thursday in November)
+  let Nov1 = new Date(date.getFullYear(), 10, 1)
+  let wdNov1 = Nov1.getDay()
+  let bfDay
+  if ( wdNov1 <= 4) bfDay = addDay(Nov1, (4-wdNov1)  + (3*7) + 1)
+  if ( wdNov1 > 4)  bfDay = addDay(Nov1, (11-wdNov1) + (3*7) + 1)  
+  commonDays.push([bfDay.getDate(), (bfDay.getMonth())+1, "🛍"])
+}
+
+// return emojis for special days
+function getEmoji(date, originalText) {
+  let day = date.getDate()
+  let month = date.getMonth()
+  
+  for (i=0; i < commonDays.length; i++) {
+    if ( commonDays[i][0] == day && commonDays[i][1] == (month + 1) ) {
+      return commonDays[i][2]
+    }
+  }
+
+  return originalText
 }
 
 // Preparation of Header line with Weekdays - localized
 function prepareWeekdayHeader (styleUS) {
   let headerArray = ["KW", "M", "D", "M", "D", "F", "S", "S"];
-  const weekday = new Date() // will be set to Monday 02.11.2020 (or 1st Nov, if weeks starts on Sunday in US-style
+  let weekday = new Date() // will be set to Monday 02.11.2020 (or 1st Nov, if weeks starts on Sunday in US-style
   const dfWeekday = dfCreateAndInit (dfWeekdayFormat)
   
   if (styleUS == true) { weekday.setDate(1) } else { weekday.setDate(2) }
@@ -388,7 +570,7 @@ function prepareWeekdayHeader (styleUS) {
   // overwrite weekdays with local strings
   for (var i = 1; i <=7; i++) {
     headerArray[i] = dfWeekday.string(weekday)
-    addDay(weekday, 1)
+    weekday = addDay(weekday, 1)
   }
   
   return headerArray
@@ -427,10 +609,11 @@ async function fetchHolidayInfo(areaCode) {
   if (file_exists == false) {
     try {
       // Fetch data from feiertage-api.de
-      ferien = await req.loadJSON()
-      ferien.dateStr = new Date().toJSON();  // timestamp of fetch
+      ferienFromAPI = await req.loadJSON()
+      ferienFromAPI.dateStr = new Date().toJSON();  // timestamp of fetch
       // Write JSON to iCloud file
-      fm.writeString(path, JSON.stringify(ferien, null, 2))
+      fm.writeString(path, JSON.stringify(ferienFromAPI, null, 2))
+      ferien = ferienFromAPI
     } catch (err) {
       // API not working :-(
       return  false
@@ -495,11 +678,26 @@ async function fetchPublicHolidayInfo(thisYear, otherYear, areaCode) {
 }
 
 // Is given date a public holiday (checks two years)
+function getDate4Holidaystring( holidaystring ){
+  // convert d to a string, which compares to the date in the json-array
+  let returnDay = 0
+        
+  // check only the current year
+  for (feiertagsname in ft1) {
+    if (feiertagsname.toString() == holidaystring ) {
+      // datum has format "yyyy-MM-dd"
+      let datum  = ft1[feiertagsname].datum 
+      returnDay = new Date (parseInt( datum.substring(0,4) ), parseInt( datum.substring(5,7) ) - 1, parseInt( datum.substring(8,10) ))
+    }
+  }  
+  return returnDay
+}
+
+// Is given date a public holiday (checks two years)
 function isPublicHoliday( d ){
-  // convert d to a string, which compares to the 'datum' in the json-array
+  // convert d to a string, which compares to the date in the json-array
   const dfJsonDate = dfCreateAndInit("yyyy-MM-dd")
-  
-  checkDate = dfJsonDate.string(d)
+  const checkDate = dfJsonDate.string(d)
   
   // check the current year
   for (feiertagsname in ft1) {
@@ -574,7 +772,7 @@ function parseInput(input) {
 
 // sets URL of widget, to forward user to Kalender after wwidget-klick
 function setWidgetURL(w, areaCode) {
-  var baseURL = "https://www.schulferien.org/Kalender_mit_Ferien/#BL#.html"
+  var baseURL = "https://www.schulferien.org/Kalender_mit_Ferien/#BL#.html" 
   var shortStr = areaCode
   var longStr = ""
   var replaceStr = "#BL#"
@@ -607,5 +805,6 @@ function setWidgetURL(w, areaCode) {
   }
   
 }
+
 
 //EOF
