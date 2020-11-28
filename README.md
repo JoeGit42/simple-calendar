@@ -1,8 +1,6 @@
 # simple-calendar
 Simple calendar widget to be used in smart stacks
 
-This is a calander widget (only small ones) which I've written for myself. 
-
 Layout is clean and simple.
 There are several switches to configure the widget. (most of them in code, 2 important ones as widget parameter)
 E.g. 
@@ -44,7 +42,7 @@ This mechanism allows multiple widget in one stack. So you can swipe through the
 * US = USA (att: special handling, calender get's US style, and holidays are not supported)
 
 ### Known Bugs
-
+- 2020-11-28 REQ: Medium widget will be supported in the future (with 2 calendar sheets - both configurable)
 
 ### ChangeLog
 - 2020-11-07 initial version
