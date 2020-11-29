@@ -59,7 +59,7 @@
 const DEBUG = false
   let debugRow
   let debugText
-const appArgs = "0,he,0,us" // used in app environment, to have widget configuration 
+const appArgs = "3,he,us" // used in app environment, to have widget configuration 
 //
 //////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -827,6 +827,7 @@ function parseInput(input) {
   let num = 0
   let area
   let get1stNum  = false
+  let get2ndNum  = false
   let get1stArea = false
   let wParameter = []
 
@@ -856,9 +857,13 @@ function parseInput(input) {
           get1stNum = true
         } else { // 2nd number for the right sheet
           monthShiftR = num
+          get2ndNum = true
         }        
       }
     } 
+    
+    // if only 1 number is given, but 2 different state, the same month is display on both sheets
+    if (get2ndNum == false && areaString != areaStringR) {monthShiftR = monthShift}
     
     // special handling for NRW
     if (areaString == "NRW")  areaString  = "NW"
