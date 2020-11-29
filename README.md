@@ -15,6 +15,9 @@ Most important configuration is to define the month to show and the state (if yo
 Parameters have to be divided by ','
 Example shows the configuration for the upcoming month, and the state Hessen
 
+Input parameters are parsed in a flexible way, so they don't have to be 100% accurate.
+Order doesn't matter. If parameters are missing, useful estimation will be done.
+
 ![](parameter.jpg)
 
 #### 1st (and maybe the only parameter) is the numeric offset for the month.
@@ -57,8 +60,6 @@ To compare german state with USA.
 
 As calendar weeks calculated in different ways, they are not the same in 2021.
 ![](medium_de_us.jpeg)
-
-Input parameters are parsed in a flexible way, so they don't have to be 100% accurate.
 
 
 ### Known Bugs
