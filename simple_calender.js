@@ -59,7 +59,7 @@
 const DEBUG = false
   let debugRow
   let debugText
-const appArgs = "3,he,us" // used in app environment, to have widget configuration 
+const appArgs = "" // used in app environment, to have widget configuration 
 //
 //////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -803,7 +803,7 @@ function isHoliday( d ){
     dEnd = new Date(dEndStr) 
     dEnd.setHours(0)
     
-    if( d >= dStart && d <= dEnd ) {
+    if( d >= dStart && d < dEnd ) {
       return true
     }
   }
