@@ -40,9 +40,28 @@ This mechanism allows multiple widget in one stack. So you can swipe through the
 * SH = Schleswig-Holstein
 * TH = Thüringen
 * US = USA (att: special handling, calender get's US style, and holidays are not supported)
+#### 3rd, 4th parameter (used for 2nd sheet in medium widget)
+e.g. 0,he,1,he
+
+shows the current and the next month
+![](medium_2month.jpeg)
+
+e.g. 0,he,0,nrw
+
+To compare different states. Useful to check different holidays
+![](medium_2states.jpeg)
+
+e.g. 0,he,0,us
+
+To compare german state with USA.
+
+As calendar weeks calculated in different ways, they are not the same in 2021.
+![](medium_de_us.jpeg)
+
+Input parameters are parsed in a flexible way, so they don't have to be 100% accurate.
+
 
 ### Known Bugs
-- 2020-11-28 REQ: Medium widget will be supported in the future (with 2 calendar sheets - both configurable)
 
 ### ChangeLog
 - 2020-11-07 initial version
@@ -58,3 +77,4 @@ This mechanism allows multiple widget in one stack. So you can swipe through the
 - 2020-11-11 FIX: last week in month lost in some cases
 - 2020-11-28 ADD: Support for large widget
 - 2020-11-28 ADD: Public Holidays will be displayed as emoji (if available). If you think it_#s to colorful, you can switch this off with showHolidayIcons = false
+- 2020-11-29 ADD: Support for medium widget
