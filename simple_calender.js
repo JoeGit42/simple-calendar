@@ -52,15 +52,35 @@
 // 
 //////////////////////////////////////////////////////////////////////////////////////////////
 
+//////////////////////////////////////////////////////////////////////////////////////////////
+// DEBUG-CONFIG - DON'T TOUCH THIS
+//////////////////////////////////////////////////////////////////////////////////////////////
+//
+const DEBUG = false
+  let debugRow
+  let debugText
+const appArgs = "0,he,0,us" // used in app environment, to have widget configuration 
+//
+//////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
 
 /////////////////////////////////////////////////////////////
 // Configuration
 /////////////////////////////////////////////////////////////
   let showCW =  true            // true: shows number of week
-  let styleUS = false           // Showes calendar in US style (1st of the week is Sunday / 1st week in the year is always 1st Jan)
+  let styleUS = false           // Shows calendar in US style (1st of the week is Sunday / 1st week in the year is always 1st Jan)
   let markPublicHoliday = true  // does only work for german public holiday (Feiertage)
   let markHoliday = true        // does only work for german holiday (Ferien)
   let showHolidayIcons = true   // shows emojis for well known public holidays
+  // config for right sheet (in medium widget)
+  let showCWR =  showCW 
+  let styleUSR = styleUS
+  let markPublicHolidayR = markPublicHoliday
+  let markHolidayR = markHoliday
+  let showHolidayIconsR = showHolidayIcons
+
 
 // Sizes for small/medium widget
 const S_FONT_SIZE_HEADER    =  15
@@ -71,7 +91,7 @@ const S_CELL_SIZE_HEIGHT    =  17
 const S_CELL_SIZE_WIDTH     =  18
 const S_CELL_SIZE_CW_WIDTH  =  25
 
-// Sizes for large widget (just doubling the values works pretty well)
+// Sizes for large widget (doubling the values works pretty well)
 const L_FONT_SIZE_HEADER    = 2.2 * S_FONT_SIZE_HEADER
 const L_FONT_SIZE_CAL       = 2.2 * S_FONT_SIZE_CAL
 const L_SPACER_AFTER_HEADER = 2.2 * S_SPACER_AFTER_HEADER
@@ -81,13 +101,13 @@ const L_CELL_SIZE_WIDTH     = 2.2 * S_CELL_SIZE_WIDTH
 const L_CELL_SIZE_CW_WIDTH  = 2.2 * S_CELL_SIZE_CW_WIDTH
 
 // Fonts and Colors
-let fontHeader = Font.mediumSystemFont(L_FONT_SIZE_HEADER) 
-let fontCal = Font.mediumSystemFont(L_FONT_SIZE_CAL) 
-let fontToday = Font.heavySystemFont(L_FONT_SIZE_CAL) 
-let fontCalOtherMonth = Font.thinSystemFont(L_FONT_SIZE_CAL) 
-let fontWeekday = Font.mediumSystemFont(L_FONT_SIZE_CAL)
-let spacerAfterHeader = L_SPACER_AFTER_HEADER
-let headerWidth = L_HEADER_WIDTH
+let fontHeader = Font.mediumSystemFont(S_FONT_SIZE_HEADER) 
+let fontCal = Font.mediumSystemFont(S_FONT_SIZE_CAL) 
+let fontToday = Font.heavySystemFont(S_FONT_SIZE_CAL) 
+let fontCalOtherMonth = Font.thinSystemFont(S_FONT_SIZE_CAL) 
+let fontWeekday = Font.mediumSystemFont(S_FONT_SIZE_CAL)
+let spacerAfterHeader = S_SPACER_AFTER_HEADER
+let headerWidth = S_HEADER_WIDTH
 const fontColorWeekdays = Color.gray()
 const fontColorCW = Color.gray()
 const fontColorSat = null // null will result in default color
@@ -98,9 +118,9 @@ const fontColorMonth = null  // null will result in default color
 const cellColorHoliday = new Color('bbbbbb', 0.42)
 
 // Size of fields
-let cellSizeHeight = L_CELL_SIZE_HEIGHT
-let cellSizeWidth = L_CELL_SIZE_WIDTH
-let cellCWSizeWidth = L_CELL_SIZE_CW_WIDTH
+let cellSizeHeight = S_CELL_SIZE_HEIGHT
+let cellSizeWidth = S_CELL_SIZE_WIDTH
+let cellCWSizeWidth = S_CELL_SIZE_CW_WIDTH
 
 // Date format
 const dfHeaderFormat = "MMMM"
@@ -111,9 +131,10 @@ const dfWeekdayFormat = "EEEEE"
 
 // Misc
 const forceApiDownload = false
-  let wParameter = []
   let monthShift = 0
   let areaString = "HE"
+  let monthShiftR = 1
+  let areaStringR = "HE"
 
 // Feiertage (bereitgestellt von https://feiertage-api.de)
 //
@@ -155,18 +176,15 @@ let commonDays = [
     [17,  7, "😀"],  // World Emoji Day
     [ 3, 10, "🇩🇪"],  // Tag der deutschen Einheit
     [31, 10, "🎃"],
+    [ 1, 11, "👼🏼"],    
     [ 6, 12, "🎅🏼"],
     [24, 12, "🎄"],
     [25, 12, "🤶🏼"],
     [26, 12, "🎁"],
     [31, 12, "🎉"]
   ];
+const commonDaysLength = commonDays.length
   
-  
-const DEBUG = false
-  let debugRow
-  let debugText
-
   
 // Returns the week of date, calculated according ISO standard
 Date.prototype.getWeekISO = function() {
@@ -201,7 +219,7 @@ Date.prototype.getWeek = function(styleUS) {
 
 // small widget instance
 let widget = await createWidget()
-if (!config.runsInWidget) await widget.presentLarge()
+if (!config.runsInWidget) await widget.presentMedium()
 Script.setWidget(widget)
 Script.complete()
 
@@ -241,10 +259,8 @@ function globalInit() {
 // main function
 async function createWidget(items) {
   let w = new ListWidget()
-  w.setPadding(5,5,5,2)
+  w.setPadding(5,3,5,2)
   
-  let cell
-
   // DEBUG init
   if (DEBUG) {
     debugRow = w.addStack()
@@ -255,13 +271,6 @@ async function createWidget(items) {
   
   globalInit()
   
-  // Date string init
-  const dfHeaderOtherYear = dfCreateAndInit(dfHeaderOtherYearFormat)
-  const dfHeaderCurrentMonth = dfCreateAndInit(dfHeaderCurrentMonthFormat)
-  const dfHeader = dfCreateAndInit(dfHeaderFormat)
-  const dfDay = dfCreateAndInit(dfDayFormat)
-  const dfWeekday = dfCreateAndInit(dfWeekdayFormat)
-
   // check parameter (month to display can be adjusted)
   // state (german: Bundesland) can be given as second parameter
   // e.g.
@@ -272,57 +281,105 @@ async function createWidget(items) {
   let parCount = parseInput(args.widgetParameter)
 
   setWidgetURL(w, areaString)
+  
+  // Check the number of rows to display (should be equal in both sheets in medium widget)
+  let dayToCalculateWith = new Date() 
+  if (monthShift != 0) addMonth(dayToCalculateWith, monthShift)
+  let thisMonth = dayToCalculateWith.getMonth()
+  let thisYear = dayToCalculateWith.getFullYear()
+  let weeksInMonth = weekCount(thisYear, thisMonth, styleUS ? 0 : 1)
+  let showSheetR = false
+
+  if (config.runsInWidget) {
+    if (config.widgetFamily == "medium") { showSheetR = true }
+  } else { showSheetR = true } // in app
+  
+  // the other sheet might have to display more weeks
+  if (showSheetR) { 
+    dayToCalculateWith = new Date() 
+    if (monthShiftR != 0) addMonth(dayToCalculateWith, monthShiftR)
+    thisMonth = dayToCalculateWith.getMonth()
+    thisYear = dayToCalculateWith.getFullYear()
+    weeksInMonth = Math.max(weeksInMonth, weekCount(thisYear, thisMonth, styleUSR ? 0 : 1))
+  }
+  
+  // a bit more space between the rows, if 5 or 4 weeks are shown
+  if (weeksInMonth < 6) {
+    cellSizeHeight = (cellSizeHeight*6)/(weeksInMonth*1.1)
+  }
+  doubleSheet =  w.addStack()
+  doubleSheet.layoutHorizontally()
+    
+  let sheetLeft = doubleSheet.addStack()
+  sheetLeft.layoutVertically()
+  await drawSheet(sheetLeft, monthShift, weeksInMonth, areaString, showCW, styleUS, markPublicHoliday, markHoliday, showHolidayIcons, areaString != areaStringR);
+
+  // show 2nd in medium widget
+  if (showSheetR) { 
+    doubleSheet.addSpacer(15)
+    let sheetRight = doubleSheet.addStack()
+    sheetRight.layoutVertically()
+    await drawSheet(sheetRight, monthShiftR, weeksInMonth, areaStringR, showCWR, styleUSR, markPublicHolidayR, markHolidayR, showHolidayIconsR, areaString != areaStringR);
+  }
+  
+  return w
+}
+
+async function drawSheet(drawstack, m_shift, num_rows, area, cw, us, p_holiday, holiday, emojis, showArea) {
+
+  // Date string init
+  const dfHeaderOtherYear = dfCreateAndInit(dfHeaderOtherYearFormat)
+  const dfHeaderCurrentMonth = dfCreateAndInit(dfHeaderCurrentMonthFormat)
+  const dfHeader = dfCreateAndInit(dfHeaderFormat)
+  const dfDay = dfCreateAndInit(dfDayFormat)
+  const dfWeekday = dfCreateAndInit(dfWeekdayFormat)
 
   // collect all the necessary data
   const today = new Date()
-  const dayToCalculateWith = new Date() // = today, will be configurable as widget-parameter in the future
-    if (monthShift != 0) addMonth(dayToCalculateWith, monthShift)
-  const thisWeek = today.getWeek(styleUS)
-  const thisMonth = dayToCalculateWith.getMonth()
-  const thisYear = dayToCalculateWith.getFullYear()
-  const otherYear = (thisMonth == 0) ? thisYear-1 : thisYear+1  // to get public Holidays in previos year or next year 
+    let dayToCalcWith = new Date()
+    if (m_shift != 0) { addMonth(dayToCalcWith, m_shift) }
+  
+  const thisWeek = today.getWeek(us)
+  const thisMonth = dayToCalcWith.getMonth()
+  const thisYear = dayToCalcWith.getFullYear()
+  const otherYear = (thisMonth == 0) ? thisYear-1 : thisYear+1  // to get public Holidays for previos year or next year 
   const thisMonthFirst = new Date(thisYear, thisMonth, 1)
   const thisMonthFirstWeekday = thisMonthFirst.getDay()  // Sunday = 0, Monday = 1, ...
-  const thisMonthFirstWeek = thisMonthFirst.getWeek(styleUS) 
+  const thisMonthFirstWeek = thisMonthFirst.getWeek(us) 
   const thisMonthLast = new Date(thisYear, thisMonth + 1, 0)
-  const thisMonthLastWeek = thisMonthLast.getWeek(styleUS) 
-  const weeksInMonth = weekCount(thisYear, thisMonth, styleUS ? 0 : 1)
-    
-  // a bit more space between the rows, if 5 or 4 weeks are shown
-  //cellSizeVert = cellSizeHeight
-  if (weeksInMonth == 4) { cellSizeHeight += cellSizeHeight/4 }
-  if (weeksInMonth == 5) { cellSizeHeight += 2 }
+  const thisMonthLastWeek = thisMonthLast.getWeek(us) 
+  const weeksInMonth = num_rows // weekCount(thisYear, thisMonth, us ? 0 : 1)
   
   // get holiday info
   // if it not succeeds, feature will be disabled 
-  if (markPublicHoliday) {
-    markPublicHoliday = await fetchPublicHolidayInfo(thisYear, otherYear, areaString)
+  if (p_holiday) {
+    p_holiday = await fetchPublicHolidayInfo(thisYear, otherYear, area)
   }
 
   // get holiday info
   // if it not succeeds, feature will be disabled 
-  if (markHoliday) {
-    markHoliday = await fetchHolidayInfo(areaString)
+  if (holiday) {
+    holiday = await fetchHolidayInfo(area)
   }
   
   // Prepare the days, which are replaced with Emojis
-  initEmojiDays(dayToCalculateWith)
+  if (emojis) initEmojiDays(dayToCalcWith)
 
     
   // Prepare an array with the weekday.
-  weekdayHeader = prepareWeekdayHeader (styleUS)
+  weekdayHeader = prepareWeekdayHeader (us)
   
   // first row will be the month
   // e.g. November
-  if ( sameDay(dayToCalculateWith, today) ) {
-   headerStr = dfHeaderCurrentMonth.string(dayToCalculateWith)  // show day, if it's the current month
-  } else if (dayToCalculateWith.getFullYear() != today.getFullYear()) {
-    headerStr = dfHeaderOtherYear.string(dayToCalculateWith)  // show year, if it's not this year
+  if ( sameDay(dayToCalcWith, today) ) {
+   headerStr = dfHeaderCurrentMonth.string(dayToCalcWith)  // show day, if it's the current month
+  } else if (dayToCalcWith.getFullYear() != today.getFullYear()) {
+    headerStr = dfHeaderOtherYear.string(dayToCalcWith)  // show year, if it's not this year
   } else {
-    headerStr = dfHeader.string(dayToCalculateWith)  // show the month
+    headerStr = dfHeader.string(dayToCalcWith)  // show the month
   }
    
-  let monthHeaderRow = w.addStack()
+  let monthHeaderRow = drawstack.addStack()
   monthHeaderRow.size = new Size(headerWidth, 0)
   if (DEBUG){ monthHeaderRow.borderWidth = 1; monthHeaderRow.borderColor = Color.yellow(); }  
   monthHeaderRow.addSpacer(0)
@@ -333,14 +390,14 @@ async function createWidget(items) {
   monthHeaderRowTxt.textColor = fontColorMonth
   monthHeaderRowTxt.centerAlignText()
   
-  w.addSpacer(spacerAfterHeader)
+  drawstack.addSpacer(spacerAfterHeader)
   
-  let fullCal = w.addStack()
+  let fullCal = drawstack.addStack()
   let dayToPrint = new Date()
   
   if (DEBUG) { fullCal.borderWidth = 1; }
   
-  if (showCW) {
+  if (cw) {
     // first column 
     // e.g.
     // KW
@@ -355,22 +412,27 @@ async function createWidget(items) {
     cwCell.size = new Size(cellCWSizeWidth, cellSizeHeight)
     cwCell.centerAlignContent()
     let cwTxt = cwCell.addText(" ") // empty cell 
+    if (showArea) {
+      cwTxt.text = area.toLowerCase()
+      if (cwTxt.text == "nw") {cwTxt.text = "nrw"}
+      //if (cwTxt.text == "us") {cwTxt.text = "🇺🇸"}
+    }
     cwTxt.font = fontCal
     cwTxt.textColor = fontColorCW
     cwTxt.centerAlignText()
     setDay(dayToPrint, thisMonthFirst)
-    let weekToShow = dayToPrint.getWeek(styleUS)
+    let weekToShow = dayToPrint.getWeek(us)
     for (var i = 0; i < weeksInMonth; i++) {
       let cwCell = cwCol.addStack()
       if (DEBUG){ cwCell.borderWidth = 1; cwCell.borderColor = Color.green(); }
       cwCell.size = new Size(cellCWSizeWidth, cellSizeHeight)
       cwCell.centerAlignContent()
-      weekToShow = dayToPrint.getWeek(styleUS)
+      weekToShow = dayToPrint.getWeek(us)
       let weekToShowStr = (weekToShow < 10) ? "#0" + weekToShow : "#" + weekToShow
       let cwTxt = cwCell.addText( weekToShowStr )
       cwTxt.font = fontCal
       cwTxt.leftAlignText()
-      if (thisWeek == weekToShow && today.getFullYear() == dayToCalculateWith.getFullYear()) { cwTxt.textColor = fontColorToday } else {  cwTxt.textColor = fontColorCW }
+      if (thisWeek == weekToShow && today.getFullYear() == dayToCalcWith.getFullYear()) { cwTxt.textColor = fontColorToday } else {  cwTxt.textColor = fontColorCW }
       dayToPrint = addDay(dayToPrint, 7) // prepare for the next week/row
     }
   } else { // some space instead of calender weeks
@@ -380,7 +442,7 @@ async function createWidget(items) {
   // now we come to the numbers 
   //   - 7 columns - one for each weekday 
   //   - 4 to 6 row for the week
-  let diff = styleUS ? thisMonthFirstWeekday : getDay1(thisMonthFirstWeekday) - 1 // number of days which have to be filled with old month in the first row
+  let diff = us ? thisMonthFirstWeekday : getDay1(thisMonthFirstWeekday) - 1 // number of days which have to be filled with old month in the first row
 
   for (var wd = 1; wd <= 7; wd++) { // one column for each weekday
     setDay(dayToPrint, thisMonthFirst)
@@ -404,12 +466,10 @@ async function createWidget(items) {
       dayCell.size = new Size(cellSizeWidth, cellSizeHeight)
       dayCell.centerAlignContent()
       let cellTxt = dayCell.addText( dfDay.string(dayToPrint) )
-      setCellStyle(dayToPrint, thisMonthFirst, dayCell, cellTxt) 
+      setCellStyle(dayToPrint, thisMonthFirst, dayCell, cellTxt, p_holiday, holiday, emojis) 
       dayToPrint = addDay(dayToPrint, 7) // prepare for the next week/row
     }
   } 
-  
-  return w
 }
 
 // days are equal?
@@ -456,11 +516,11 @@ function weekCount(year, month_number, startDayOfWeek) {
 }
 
 // set style for the calender
-function setCellStyle(day, reference, cellStack, cellText) {
+function setCellStyle(day, reference, cellStack, cellText, p_holiday, holiday, showEmojis) {
   const today = new Date()
   
   //check if date can be replaced by emoji
-  if (showHolidayIcons)  cellText.text = getEmoji(day, cellText.text)
+  if (showEmojis)  cellText.text = getEmoji(day, cellText.text)
     
   // different style for days of previous and next month 
   if (day.getMonth() != reference.getMonth()) {
@@ -474,11 +534,11 @@ function setCellStyle(day, reference, cellStack, cellText) {
     cellText.font = fontCal
   }
   
-  if (markPublicHoliday && ft1 && ft2) {
+  if (p_holiday && ft1 && ft2) {
     if (isPublicHoliday (day) && fontColorSun) cellText.textColor = fontColorSun
   }
   
-  if (markHoliday && ferien) {
+  if (holiday && ferien) {
     if (isHoliday (day) ) cellStack.backgroundColor = cellColorHoliday 
   }
     
@@ -511,6 +571,14 @@ function getHighlightedDate(date, color) {
 
 
 function initEmojiDays(date) {
+
+  // delete last entries
+  if (commonDaysLength < commonDays.length) {
+    for (i = (commonDays.length - commonDaysLength); i; i--) {
+      commonDays.pop()
+    }    
+  }
+
   // Special hanbdling for days to calculate
   // 1. Advent 
   let xmasEve = new Date(date.getFullYear(), 11, 24)
@@ -520,12 +588,21 @@ function initEmojiDays(date) {
 
   // Easter Monday  
   let EasterMonday = getDate4Holidaystring("Ostermontag")
-  if (EasterMonday) commonDays.push([EasterMonday.getDate(), (EasterMonday.getMonth())+1, "🐰"])
+  if (EasterMonday) {
+    let EasterSunday = addDay(EasterMonday, -1)
+    commonDays.push([EasterSunday.getDate(), (EasterSunday.getMonth())+1, "🐰"])
+  }
 
   // Good Friday
   if (EasterMonday) {
     let GoodFriday = addDay(EasterMonday, -3)
     commonDays.push([GoodFriday.getDate(), (GoodFriday.getMonth())+1, "✝️"])
+  }
+  
+  // Ascension Day
+  if (EasterMonday) {
+    let AscensionDay = addDay(EasterMonday, 38)
+    commonDays.push([AscensionDay.getDate(), (AscensionDay.getMonth())+1, "☄️"])
   }
   
   // Karneval ("Altweiber")
@@ -537,9 +614,9 @@ function initEmojiDays(date) {
   // Black Friday (the day after the 4th Thursday in November)
   let Nov1 = new Date(date.getFullYear(), 10, 1)
   let wdNov1 = Nov1.getDay()
-  let bfDay
-  if ( wdNov1 <= 4) bfDay = addDay(Nov1, (4-wdNov1)  + (3*7) + 1)
-  if ( wdNov1 > 4)  bfDay = addDay(Nov1, (11-wdNov1) + (3*7) + 1)  
+  let bfDay = Nov1
+  if ( wdNov1 <= 4) { bfDay = addDay(Nov1, (4-wdNov1)  + (3*7) + 1) } 
+  if ( wdNov1 > 4)  { bfDay = addDay(Nov1, (11-wdNov1) + (3*7) + 1) }  
   commonDays.push([bfDay.getDate(), (bfDay.getMonth())+1, "🛍"])
 }
 
@@ -745,24 +822,60 @@ function parseInput(input) {
   // load defaults
   monthShift = 0    // default
   areaString = "HE" // default
+  monthShiftR = 1    // default for right sheet in medium widget
+  areaStringR = "HE" // default for right sheet in medium widget
+  let num = 0
+  let area
+  let get1stNum  = false
+  let get1stArea = false
+  let wParameter = []
+
+  if (!config.runsInWidget) {
+    input = appArgs
+  }
 
   if (input != null && input.length > 0) {
     wParameter = input.split(",")
-    
     let parCount = wParameter.length
     
-    // take over the given parameters to global variables
-    if (parCount > 0) { monthShift = parseInt(wParameter[0]) }
-    if (parCount > 1) { areaString = wParameter[1].toUpperCase().trim() }
+    for (i=0; i < parCount; i++) {
+      num = parseInt(wParameter[i])
+      if ( isNaN(num) ) {
+        area = wParameter[i].toUpperCase().trim() 
+        if (!get1stArea) { // 1st number for the left or only sheet
+          areaString = area
+          areaStringR = area
+          get1stArea = true
+        } else { // 2nd number for the right sheet
+          areaStringR = area
+        }        
+      } else { // is number
+        if (!get1stNum) { // 1st number for the left or only sheet
+          monthShift = num
+          monthShiftR = num + 1
+          get1stNum = true
+        } else { // 2nd number for the right sheet
+          monthShiftR = num
+        }        
+      }
+    } 
     
     // special handling for NRW
-    if (areaString == "NRW") areaString = "NW"
+    if (areaString == "NRW")  areaString  = "NW"
+    if (areaStringR == "NRW") areaStringR = "NW"
     
     // special handling for US
     if (areaString == "US") {
       styleUS = true
       markPublicHoliday = false  // does only work for german public holiday (Feiertage)
       markHoliday = false        // does only work for german  holiday (Ferien)
+      showHolidayIcons = false   // no emojis in US mode
+    }
+    if (areaStringR == "US") {
+      styleUSR = true
+      markPublicHolidayR = false  // does only work for german public holiday (Feiertage)
+      markHolidayR = false        // does only work for german  holiday (Ferien)
+      showHolidayIconsR = false   // no emojis in US mode
     }
     
     return wParameter.length
