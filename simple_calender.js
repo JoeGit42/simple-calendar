@@ -60,7 +60,7 @@
 const DEBUG = false
   let debugRow
   let debugText
-const appArgs = "" // used in app environment, to have widget configuration 
+const appArgs = "2,fa,he" // used in app environment, to have widget configuration 
 //
 //////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -459,11 +459,11 @@ async function createWidget(items) {
     if (!styleFAR) {
       thisMonth = dayToCalculateWith.getMonth()
       thisYear = dayToCalculateWith.getFullYear()
-      weeksInMonth = weekCount(thisYear, thisMonth, styleUSR ? 0 : 1)
+      weeksInMonth = Math.max(weeksInMonth, weekCount(thisYear, thisMonth, styleUSR ? 0 : 1))
     } else { // styleFA
       thisMonth = dayToCalculateWith.getMonthFa()
       thisYear = dayToCalculateWith.getFullYearFa()
-      weeksInMonth = weekCountFa(thisYear, thisMonth+1)
+      weeksInMonth = Math.max(weeksInMonth, weekCountFa(thisYear, thisMonth+1))
     }
   }
   
