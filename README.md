@@ -10,6 +10,8 @@ E.g.
 
 ![](hell.mov) ![](dunkel.mov)
 
+![](farsi.mov)
+
 ### Configuration
 Most important configuration is to define the month to show and the state (if you want to see marked holidays)
 Parameters have to be divided by ','
@@ -43,6 +45,8 @@ This mechanism allows multiple widget in one stack. So you can swipe through the
 * SH = Schleswig-Holstein
 * TH = Thüringen
 * US = USA (att: special handling, calender get's US style, and holidays are not supported)
+* FA = Persian/Farsi calendar (att: special handling, calender get's persian style, weeknumbers and holidays are not supported)
+
 #### 3rd, 4th parameter (used for 2nd sheet in medium widget)
 e.g. 0,he,1,he
 
@@ -79,3 +83,4 @@ As calendar weeks calculated in different ways, they are not the same in 2021.
 - 2020-11-28 ADD: Support for large widget
 - 2020-11-28 ADD: Public Holidays will be displayed as emoji (if available). If you think it_#s to colorful, you can switch this off with showHolidayIcons = false
 - 2020-11-29 ADD: Support for medium widget
+- 2020-12-03 ADD: Support for Persian / Farsi calendar 
