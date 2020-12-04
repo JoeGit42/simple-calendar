@@ -45,10 +45,14 @@ This mechanism allows multiple widget in one stack. So you can swipe through the
 * SH = Schleswig-Holstein
 * TH = Thüringen
 
+
 * US = USA (att: special handling, calender get's US style, only public holidays are not supported)
+
+
 * ??   any code, which is supported by https://date.nager.at/Home/Countries 
 
 * FA = Persian/Farsi calendar (att: special handling, calender get's persian style, weeknumbers are not supported)
+
        - this code can be extend by country codes (e.g. FA-EG for Egypt)
 
 #### 3rd, 4th parameter (used for 2nd sheet in medium widget)
