@@ -60,7 +60,7 @@
 const DEBUG = false
   let debugRow
   let debugText
-const appArgs = "2,fa,he" // used in app environment, to have widget configuration 
+const appArgs = "" // used in app environment, to have widget configuration 
 //
 //////////////////////////////////////////////////////////////////////////////////////////////
 
