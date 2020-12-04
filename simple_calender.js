@@ -43,7 +43,7 @@
 //     SH = Schleswig-Holstein
 //     TH = Thüringen
 //
-//     US = USA (att: special handling, calender get's US style, and holidays are not supported)
+//     US = USA (att: special handling, calender get's US style)
 //     FA = Persian/Farsi calendar
 //
 // 
@@ -83,6 +83,18 @@ const appArgs = "" // used in app environment, to have widget configuration
   let markPublicHolidayR = markPublicHoliday
   let markHolidayR = markHoliday
   let showHolidayIconsR = showHolidayIcons
+
+// Background-Image support
+// For transparent backgrounds use the following script to create the correct image:
+//    https://gist.github.com/mzeryck/3a97ccd1e059b3afa3c6666d27a496c9
+// After creating the image and saving it to photo library, you have to start this script with scriptable
+// Set forceImageSelection = true -> You will get a dialog to select an image from library.
+// The selected image will be saved with the filename <imgFileName>
+// You have to set the same filename as one of the wdiget parameters
+  let imgFileName = "image.jpg" // this filename has to be used as widget-parameter 
+  let useImageAsBackground = false  
+  let forceImageSelection = false
+  let backgroundImage
 
 
 // Sizes for small/medium widget
@@ -453,6 +465,20 @@ async function createWidget(items) {
 
   globalInit()
 
+  if ( useImageAsBackground || (forceImageSelection && config.runsInApp) ) {
+    let foundPicture
+    try {
+      foundPicture = await getBackgroundImage();
+      if (foundPicture) w.backgroundImage = backgroundImage
+    } catch (err) {
+      useImageAsBackground = false
+    }
+    if (!foundPicture) {
+      let stack = w.addStack()
+      stack.addText ("[" + imgFileName + "] not found")
+    }
+  }
+  
   setWidgetURL(w, areaString)
   
   // Check the number of rows to display (should be equal in both sheets in medium widget)
@@ -511,6 +537,37 @@ async function createWidget(items) {
   return w
 }
 
+// get image to be used as background
+async function getBackgroundImage () {
+  let fm = FileManager.local()
+  let dir = fm.documentsDirectory()
+  let path = fm.joinPath(dir, imgFileName)
+
+  try {
+    if (config.runsInApp && forceImageSelection) {
+       let alert = new Alert()
+       alert.message = "You can select an image from your library to be used as background."
+       alert.addAction("OK")
+       await alert.presentAlert()
+       backgroundImage = await Photos.fromLibrary()
+       await fm.writeImage(path, backgroundImage);
+       return true     
+    }
+    
+    if ( fm.fileExists(path) ) {
+      backgroundImage = await fm.readImage(path);
+    } else {
+      return false
+    }
+  } catch (err) {
+    useImageAsBackground = false
+    return false
+  }
+  
+  return true
+}
+
+// draws one calender sheet (will be called twice in medium widget)
 async function drawSheet(drawstack, m_shift, num_rows, area, cw, us, fa, p_holiday, holiday, emojis, showArea) {
 
   // Date string init
@@ -1130,6 +1187,11 @@ function parseInput(input) {
     for (i=0; i < parCount; i++) {
       num = parseInt(wParameter[i])
       if ( isNaN(num) ) {
+        if ( wParameter[i].toLowerCase().indexOf(".jpg") >= 0 || wParameter[i].toLowerCase().indexOf(".jpeg") >= 0 ){
+          imgFileName = wParameter[i].toLowerCase().trim()
+          useImageAsBackground = true
+          continue;
+        }
         area = wParameter[i].toUpperCase().trim() 
         if (!get1stArea) { // 1st number for the left or only sheet
           areaString = area
@@ -1163,19 +1225,17 @@ function parseInput(input) {
     // special handling for US
     if (areaString == "US") {
       styleUS = true
-      markPublicHoliday = true   
       markHoliday = false        // does only work for german  holiday (Ferien)
     }
     if (areaStringR == "US") {
       styleUSR = true
-      markPublicHolidayR = true    
       markHolidayR = false        // does only work for german  holiday (Ferien)
     }
     
     // special handling for Farsi
     if (areaString.indexOf("FA") >= 0) {
       styleFA = true
-      markPublicHoliday = false  // check, which country to choose
+      markPublicHoliday = false  // changed below, if additional country is given
       markHoliday = false        // does only work for german  holiday (Ferien)
       showCW = false
       // FA can be extended with country code to search public holidays - see https://date.nager.at/Home/Countries for list of supported countries
@@ -1188,7 +1248,7 @@ function parseInput(input) {
     }
     if (areaStringR.indexOf("FA") >= 0) {
       styleFAR = true
-      markPublicHolidayR = false 
+      markPublicHolidayR = false  // changed below, if additional country is given
       markHolidayR = false        // does only work for german  holiday (Ferien)
       showCWR = false
       // FA can be extended with country code to search public holidays - see https://date.nager.at/Home/Countries for list of supported countries
