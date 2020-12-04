@@ -74,6 +74,15 @@ As calendar weeks calculated in different ways, they are not the same in 2021.
 ![](medium_de_us.jpeg)
 
 
+#### Image support
+* For transparent backgrounds use the following script to create the correct image:
+    https://gist.github.com/mzeryck/3a97ccd1e059b3afa3c6666d27a496c9
+* After creating the image and saving it to photo library, you have to start the calendar script within scriptable app
+* Change in code: forceImageSelection = true -> After next start you will get a dialog to select an image from library.
+* The selected image will be saved with the filename <imgFileName> (default is image.jpg)
+* You have to set the same filename as one of the wdiget parameters
+* e.g. 0,he,image.jpg 
+
 ### Known Bugs
 
 ### ChangeLog
@@ -93,3 +102,4 @@ As calendar weeks calculated in different ways, they are not the same in 2021.
 - 2020-11-29 ADD: Support for medium widget
 - 2020-12-03 ADD: Support for Persian / Farsi calendar 
 - 2020-12-04 ADD: Support for international public holiday
+- 2020-12-04 ADD: Support for background images (you can fake transparent effect with this)
