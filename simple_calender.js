@@ -161,7 +161,8 @@ const forceApiDownload = false
 // Beispiel (Daten für Hessen):      https://feiertage-api.de/api/?jahr=2020&nur_land=HE
 // Beispiel (Daten für Deutschland): https://feiertage-api.de/api/?jahr=2020&nur_daten
 //
-const feiertageApiURL = "https://feiertage-api.de/api/?jahr="
+const feiertageApiURLworld = "https://date.nager.at/api/v2/PublicHolidays/#yyyy#/#area#"
+const feiertageApiURLde = "https://feiertage-api.de/api/?jahr=#yyyy#&nur_land=#area#"
   var ft1, ft2
   
 // Ferien (bereitgestellt von https://ferien-api.de)
@@ -198,6 +199,25 @@ let commonDays = [
   ];
 const commonDaysLength = commonDays.length
   
+const bl = [
+    ["BW", "Baden_Wuerttemberg"],
+    ["BY", "Bayern"],
+    ["BE", "Berlin"],
+    ["BB", "Brandenburg"],
+    ["HB", "Bremen"],
+    ["HH", "Hamburg"],
+    ["HE", "Hessen"],
+    ["MV", "Mecklenburg_Vorpommern"],
+    ["NI", "Niedersachsen"],
+    ["NW", "Nordrhein_Westfalen"],
+    ["RP", "Rheinland_Pfalz"],
+    ["SL", "Saarland"],
+    ["SN", "Sachsen"],
+    ["ST", "Sachsen_Anhalt"],
+    ["SH", "Schleswig_Holstein"],
+    ["TH", "Thueringen"]
+  ];
+
   
 // Returns the week of date, calculated according ISO standard
 Date.prototype.getWeekISO = function() {
@@ -945,6 +965,12 @@ async function fetchHolidayInfo(areaCode) {
   return true
 }
 
+function isGermanState(area) {
+  for (i=0; i<bl.length; i++) {
+    if ( area.toUpperCase() == bl[i][0].toUpperCase() ) return true
+  }
+}
+
 // fetches the public holiday (german: Feiertage) info and does caching
 async function fetchPublicHolidayInfo(thisYear, otherYear, areaCode) {
   // get public holidays for this year and the previous year in January or the next year in December
@@ -954,12 +980,23 @@ async function fetchPublicHolidayInfo(thisYear, otherYear, areaCode) {
   let dir = fm.documentsDirectory()
   let path = fm.joinPath(dir, "feiertage_" + thisYear + "_" + areaStr + ".json")
   let path2 = fm.joinPath(dir, "feiertage_" + otherYear + "_" + areaStr + ".json")
-  let apiURL = feiertageApiURL + thisYear + "&nur_land=" + areaStr
-  let apiURL2 = feiertageApiURL + otherYear + "&nur_land=" + areaStr
+  let apiURL, apiURL2
+
+  if ( isGermanState(areaStr) ) {
+    apiURL = feiertageApiURLde
+  } else {
+    apiURL = feiertageApiURLworld
+  }
+  apiURL = apiURL.replace("#area#", areaStr)
+  apiURL2 = apiURL
+  apiURL = apiURL.replace("#yyyy#", thisYear)
+  apiURL2 = apiURL2.replace("#yyyy#", otherYear)
+     
   let file_exists = true
   let req = new Request(apiURL)
   let req2 = new Request(apiURL2)
   const today = new Date()
+  
 
   // check if file already exists and is from today
   try {
@@ -995,7 +1032,6 @@ async function fetchPublicHolidayInfo(thisYear, otherYear, areaCode) {
       return  false
     }  
   }
-
   return true
 }
 
@@ -1018,18 +1054,24 @@ function getDate4Holidaystring( holidaystring ){
 // Is given date a public holiday (checks two years)
 function isPublicHoliday( d ){
   // convert d to a string, which compares to the date in the json-array
-  const dfJsonDate = dfCreateAndInit("yyyy-MM-dd")
+  const dfJsonDate = dfCreateAndInit("yyyy-MM-dd")  // same for world and de json-files
   const checkDate = dfJsonDate.string(d)
   
   // check the current year
   for (feiertagsname in ft1) {
-    if( ft1[feiertagsname].datum == checkDate ) {
+    if( ft1[feiertagsname].datum == checkDate ) {   // german api useses "datum"
+      return feiertagsname
+    }
+    if( ft1[feiertagsname].date == checkDate ) {    // world api uses "date"
       return feiertagsname
     }
   }
   // check the other year needed in January and December
   for (feiertagsname in ft2) {
     if( ft2[feiertagsname].datum == checkDate ) {
+      return feiertagsname
+    }
+    if( ft2[feiertagsname].date == checkDate ) {
       return feiertagsname
     }
   }
@@ -1115,34 +1157,47 @@ function parseInput(input) {
     if (areaString == "NRW")  areaString  = "NW"
     if (areaStringR == "NRW") areaStringR = "NW"
     
+    if (isGermanState(areaString))  {showHolidayIcons  = true} else {showHolidayIcons  = false}
+    if (isGermanState(areaStringR)) {showHolidayIconsR = true} else {showHolidayIconsR = false}
+    
     // special handling for US
     if (areaString == "US") {
       styleUS = true
-      markPublicHoliday = false  // does only work for german public holiday (Feiertage)
+      markPublicHoliday = true   
       markHoliday = false        // does only work for german  holiday (Ferien)
-      showHolidayIcons = false   // no emojis in US mode
     }
     if (areaStringR == "US") {
       styleUSR = true
-      markPublicHolidayR = false  // does only work for german public holiday (Feiertage)
+      markPublicHolidayR = true    
       markHolidayR = false        // does only work for german  holiday (Ferien)
-      showHolidayIconsR = false   // no emojis in US mode
     }
-
+    
     // special handling for Farsi
-    if (areaString == "FA") {
+    if (areaString.indexOf("FA") >= 0) {
       styleFA = true
-      markPublicHoliday = false  // does only work for german public holiday (Feiertage)
+      markPublicHoliday = false  // check, which country to choose
       markHoliday = false        // does only work for german  holiday (Ferien)
-      showHolidayIcons = false   // no emojis in FA mode
       showCW = false
+      // FA can be extended with country code to search public holidays - see https://date.nager.at/Home/Countries for list of supported countries
+      if (areaString.length >= 4) {
+        areaString = areaString.replace("FA","").trim() 
+        areaString = areaString.replace("-","").trim() 
+        areaString = areaString.replace("_","").trim() 
+        markPublicHoliday = true
+      } 
     }
-    if (areaStringR == "FA") {
+    if (areaStringR.indexOf("FA") >= 0) {
       styleFAR = true
-      markPublicHolidayR = false  // does only work for german public holiday (Feiertage)
+      markPublicHolidayR = false 
       markHolidayR = false        // does only work for german  holiday (Ferien)
-      showHolidayIconsR = false   // no emojis in FA mode
       showCWR = false
+      // FA can be extended with country code to search public holidays - see https://date.nager.at/Home/Countries for list of supported countries
+      if (areaStringR.length >= 4) {
+        areaStringR = areaStringR.replace("FA","").trim() 
+        areaStringR = areaStringR.replace("-","").trim() 
+        areaStringR = areaStringR.replace("_","").trim() 
+        markPublicHolidayR = true
+      } 
     }
     
     return wParameter.length
@@ -1156,29 +1211,13 @@ function setWidgetURL(w, areaCode) {
   var shortStr = areaCode
   var longStr = ""
   var replaceStr = "#BL#"
-  var bl = [
-    ["BW", "Baden_Wuerttemberg"],
-    ["BY", "Bayern"],
-    ["BE", "Berlin"],
-    ["BB", "Brandenburg"],
-    ["HB", "Bremen"],
-    ["HH", "Hamburg"],
-    ["HE", "Hessen"],
-    ["MV", "Mecklenburg_Vorpommern"],
-    ["NI", "Niedersachsen"],
-    ["NW", "Nordrhein_Westfalen"],
-    ["RP", "Rheinland_Pfalz"],
-    ["SL", "Saarland"],
-    ["SN", "Sachsen"],
-    ["ST", "Sachsen_Anhalt"],
-    ["SH", "Schleswig_Holstein"],
-    ["TH", "Thueringen"]
-  ];
 
-  if (styleUS) {
+  if (styleFA) {
+    w.url = "http://www.iranian-calendar.com"
+  } else if (styleUS) {
     w.url = "https://www.timeanddate.com/calendar/?country=1"    
   } else {
-    for (i=0; i<16; i++) {
+    for (i=0; i<bl.length; i++) {
       if (shortStr == bl[i][0]) longStr = bl[i][1]
     }
     w.url = baseURL.replace(replaceStr, longStr)
