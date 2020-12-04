@@ -44,8 +44,12 @@ This mechanism allows multiple widget in one stack. So you can swipe through the
 * ST = Sachsen-Anhalt
 * SH = Schleswig-Holstein
 * TH = Thüringen
-* US = USA (att: special handling, calender get's US style, and holidays are not supported)
-* FA = Persian/Farsi calendar (att: special handling, calender get's persian style, weeknumbers and holidays are not supported)
+
+* US = USA (att: special handling, calender get's US style, only public holidays are not supported)
+* ??   any code, which is supported by https://date.nager.at/Home/Countries 
+
+* FA = Persian/Farsi calendar (att: special handling, calender get's persian style, weeknumbers are not supported)
+       - this code can be extend by country codes (e.g. FA-EG for Egypt)
 
 #### 3rd, 4th parameter (used for 2nd sheet in medium widget)
 e.g. 0,he,1,he
@@ -84,3 +88,4 @@ As calendar weeks calculated in different ways, they are not the same in 2021.
 - 2020-11-28 ADD: Public Holidays will be displayed as emoji (if available). If you think it_#s to colorful, you can switch this off with showHolidayIcons = false
 - 2020-11-29 ADD: Support for medium widget
 - 2020-12-03 ADD: Support for Persian / Farsi calendar 
+- 2020-12-04 ADD: Support for international public holiday
