@@ -60,7 +60,7 @@
 const DEBUG = false
   let debugRow
   let debugText
-const appArgs = "" // used in app environment, to have widget configuration 
+const appArgs = "0,fahe" // used in app environment, to have widget configuration 
 //
 //////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -1157,8 +1157,8 @@ function parseInput(input) {
     if (areaString == "NRW")  areaString  = "NW"
     if (areaStringR == "NRW") areaStringR = "NW"
     
-    if (isGermanState(areaString))  {showHolidayIcons  = true} else {showHolidayIcons  = false}
-    if (isGermanState(areaStringR)) {showHolidayIconsR = true} else {showHolidayIconsR = false}
+    if (!isGermanState(areaString))   {showHolidayIcons  = false}
+    if (!isGermanState(areaStringR))  {showHolidayIconsR = false}
     
     // special handling for US
     if (areaString == "US") {
