@@ -83,6 +83,11 @@ As calendar weeks calculated in different ways, they are not the same in 2021.
 * You have to set the same filename as one of the wdiget parameters
 * e.g. 0,he,image.jpg 
 
+#### Private Holidays
+* It's possible to dispay your private holidays in green font color. (Saturday remains red).
+* To enter your holiday dates you have to fill the array <privateHoliday> with your data.
+  Each entry gets start and end-date. If you want to enter a single day, take this as start and end-date
+
 ### Known Bugs
 
 ### ChangeLog
@@ -103,3 +108,4 @@ As calendar weeks calculated in different ways, they are not the same in 2021.
 - 2020-12-03 ADD: Support for Persian / Farsi calendar 
 - 2020-12-04 ADD: Support for international public holiday
 - 2020-12-04 ADD: Support for background images (you can fake transparent effect with this)
+- 2020-12-11 ADD: Support for private holidays. 
