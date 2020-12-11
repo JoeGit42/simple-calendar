@@ -131,6 +131,7 @@ const fontColorOtherMonth = Color.gray()
 const fontColorToday = Color.green()
 const fontColorMonth = null  // null will result in default color
 const cellColorHoliday = new Color('bbbbbb', 0.42)
+const fontColorPrivate = Color.green()
 
 // Size of fields
 let cellSizeHeight = S_CELL_SIZE_HEIGHT
@@ -195,7 +196,7 @@ const ferienApiURL = "https://ferien-api.de/api/v1/holidays/"
 // Days which can be displayed as Emoji
 // variable days will be added in initEmojiDays()
 let commonDays = [
-    [ 1,  1, "🧨"],
+    [ 1,  1, "🥂"],
     [ 6,  1, "👑"],
     [14,  2, "💝"],  // Valentine's day
     [ 1,  5, "🙅🏼‍♂️"],  // Tag der Arbeit, German Labour day
@@ -207,10 +208,17 @@ let commonDays = [
     [24, 12, "🎄"],
     [25, 12, "🤶🏼"],
     [26, 12, "🎁"],
-    [31, 12, "🎉"]
+    [31, 12, "🍾"]
   ];
 const commonDaysLength = commonDays.length
-  
+
+// List for own private holidays
+const privateHoliday = [
+//   ["2020-12-24", "2021-01-03"],
+//   ["2020-12-09", "2020-12-09"],
+//   ["2020-12-24", "2021-01-03"]    // last entry without comma 
+];
+
 const bl = [
     ["BW", "Baden_Wuerttemberg"],
     ["BY", "Bayern"],
@@ -823,13 +831,19 @@ function weekCount(year, month_number, startDayOfWeek) {
 // set style for the calender
 function setCellStyle(day, reference, cellStack, cellText, p_holiday, holiday, showEmojis, fa) {
   const today = new Date()
+  let isPrivate = false;
   
   //check if date can be replaced by emoji
   if (showEmojis)  cellText.text = getEmoji(day, cellText.text)
+
+  if (isPrivateHoliday(day)) {
+    cellText.textColor = fontColorPrivate
+    isPrivate = true
+  }
     
   // different style for days of previous and next month 
   if ( !sameMonth(day, reference, fa) ) {
-    cellText.textColor = fontColorOtherMonth
+    if (!isPrivate) {cellText.textColor = fontColorOtherMonth} else {cellText.textColor = fontColorPrivate}
     if (!fa && day.getDay() == 6 && fontColorSat) cellText.textColor = fontColorSat
     if (!fa && day.getDay() == 0 && fontColorSun) cellText.textColor = fontColorSun
     if (fa && day.getDay() == 5 && fontColorSun) cellText.textColor = fontColorSun    // persian calendar get the Friday in red
@@ -862,6 +876,11 @@ function setCellStyle(day, reference, cellStack, cellText, p_holiday, holiday, s
 // creates circle for a highlighted day
 function getHighlightedDate(date, color) {
   const drawing = new DrawContext()
+  let textColor
+  if (color) {
+    if (color.hex != fontColorToday.hex) {textColor = color} else {textColor = null}
+  }
+  
   drawing.respectScreenScale = true
   const size = 50
   drawing.size = new Size(size, size)
@@ -869,7 +888,7 @@ function getHighlightedDate(date, color) {
   drawing.setFillColor(fontColorToday)
   drawing.fillEllipse(new Rect(1, 1, size - 2, size - 2))
   drawing.setFont(Font.boldSystemFont(30))
-  if (color) drawing.setTextColor(color)  
+  if (textColor) drawing.setTextColor(textColor)  
   drawing.setTextAlignedCenter()
   drawing.drawTextInRect(date, new Rect(0, 6, size, size))
   const currentDayImg = drawing.getImage()
@@ -1154,6 +1173,24 @@ function isHoliday( d ){
   return false
 }
 
+function isPrivateHoliday( d ){
+  var dStartStr, dEndStr
+
+  for (index in privateHoliday) {
+    dStartStr = "" + privateHoliday[index][0]
+    dStart =  new Date(dStartStr)
+    dStart.setHours(0)
+    dEndStr = "" + privateHoliday[index][1]
+    dEnd = new Date(dEndStr) 
+    dEnd.setHours(0)
+    
+    if( d >= dStart && d <= dEnd ) {
+      return true
+    }
+  }
+  return false
+}
+
 
 // creates and inits a DateFormatter
 function dfCreateAndInit (format) {
@@ -1179,6 +1216,9 @@ function parseInput(input) {
   if (!config.runsInWidget) {
     input = appArgs
   }
+
+  input = input.replace(/;/g,",")  // convert ; -> ,
+//   input = input.replace(/|/g,",")  // convert | -> ,
 
   if (input != null && input.length > 0) {
     wParameter = input.split(",")
