@@ -51,6 +51,10 @@
 // ⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺
 // (1) Support of US holidays
 // 
+// Misc
+// ⎺⎺⎺⎺
+// • Holiday icons are downloaded from https://www.streamlineicons.com
+// 
 //////////////////////////////////////////////////////////////////////////////////////////////
 
 //////////////////////////////////////////////////////////////////////////////////////////////
@@ -155,8 +159,13 @@ const faHeaderOtherYearFormat = {month: 'long', year: 'numeric'}
 const faDayFormat = {day: 'numeric'}
 const faWeekdayFormat = {weekday: 'narrow'}
 
+// Refresh
+const REFRESH_TIME = "00:00"  // widget will be refreshed this time next day. (or not earlier than that)
+const REFRESH_OFFSET_MIN = 10 // seconds
+const REFRESH_OFFSET_MAX = 400// seconds
+
 // Misc
-const forceApiDownload = false
+const forceDownload = false
   let monthShift = 0
   let areaString = "HE"
   let monthShiftR = 1
@@ -193,22 +202,31 @@ const ferienApiURL = "https://ferien-api.de/api/v1/holidays/"
   var ferien
   var ferienFromAPI
 
+
+// Icons
+//
+const iconBaseURL = "https://github.com/JoeGit42/simple-calendar/blob/main/icons/"
+
+
 // Days which can be displayed as Emoji
 // variable days will be added in initEmojiDays()
+// It's possible to replace day with emoji or icon.
+// To use emojis, just set emoji as one character (e.g. [31, 10, "🎃"])
+// To use icons, enter icon name (e.g. [31, 10, "halloween-pumpkin"])
 let commonDays = [
-    [ 1,  1, "🥂"],
-    [ 6,  1, "👑"],
-    [14,  2, "💝"],  // Valentine's day
-    [ 1,  5, "🙅🏼‍♂️"],  // Tag der Arbeit, German Labour day
-    [17,  7, "😀"],  // World Emoji Day
-    [ 3, 10, "🇩🇪"],  // Tag der deutschen Einheit
-    [31, 10, "🎃"],
-    [ 1, 11, "👼🏼"],    
-    [ 6, 12, "🎅🏼"],
-    [24, 12, "🎄"],
-    [25, 12, "🤶🏼"],
-    [26, 12, "🎁"],
-    [31, 12, "🍾"]
+    [ 1,  1, "champagne-cheers"],  //🥂
+    [ 6,  1, "history-man-king"],  //👑
+    [14,  2, "love-gift-chocolate-box"],  // 💝Valentine's day
+    [ 1,  5, "walking-forbidden"],  // 🙅🏼‍♂️Tag der Arbeit, German Labour day
+    [17,  7, "smiley-smile"],  // 😀World Emoji Day
+    [ 3, 10, "🇩🇪"],  // 🇩🇪Tag der deutschen Einheit
+    [31, 10, "halloween-pumpkin"],  //🎃
+    [ 1, 11, "christmas-angel"],  //👼🏼 
+    [ 6, 12, "christmas-santa"],  //🎅🏼
+    [24, 12, "tree-christmas"],  //🎄
+    [25, 12, "christmas-tree-ornament"],  //🤶🏼
+    [26, 12, "christmas-tree-ornaments-1"],  //🎁
+    [31, 12, "champagne-cooler"]   //🍾
   ];
 const commonDaysLength = commonDays.length
 
@@ -542,8 +560,26 @@ async function createWidget(items) {
     await drawSheet(sheetRight, monthShiftR, weeksInMonth, areaStringR, showCWR, styleUSR, styleFAR, markPublicHolidayR, markHolidayR, showHolidayIconsR, areaString != areaStringR);
   }
   
+  // set refresh date
+  w.refreshAfterDate = getRefreshDate(REFRESH_TIME, REFRESH_OFFSET_MIN, REFRESH_OFFSET_MAX)
+
   return w
 }
+
+function getRefreshDate (rTimeStr, minOffsetSec, maxOffsetSec) {
+  // set tomorrow
+  const d = new Date()
+  let rDate = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1)
+  
+  // in the early morning
+  let rtime = rTimeStr.split(":")
+  rDate.setHours(rtime[0])
+  rDate.setMinutes(rtime[1])
+  rDate.setSeconds(getRandomArbitrary(minOffsetSec, maxOffsetSec))
+  
+  return rDate
+}
+
 
 // get image to be used as background
 async function getBackgroundImage () {
@@ -741,7 +777,7 @@ async function drawSheet(drawstack, m_shift, num_rows, area, cw, us, fa, p_holid
       dayCell.centerAlignContent()
       let cellTxt = dayCell.addText( dfDay.string(dayToPrint) )
       if (fa) cellTxt.text = dayToPrint.toLocaleDateString(faLocalizationString, faDayFormat) 
-      setCellStyle(dayToPrint, (fa) ? thisMonthFirstFa : thisMonthFirst, dayCell, cellTxt, p_holiday, holiday, emojis, fa) 
+      await setCellStyle(dayToPrint, (fa) ? thisMonthFirstFa : thisMonthFirst, dayCell, cellTxt, p_holiday, holiday, emojis, fa) 
       dayToPrint = addDay(dayToPrint, 7) // prepare for the next week/row
     }
   } 
@@ -829,12 +865,30 @@ function weekCount(year, month_number, startDayOfWeek) {
 }
 
 // set style for the calender
-function setCellStyle(day, reference, cellStack, cellText, p_holiday, holiday, showEmojis, fa) {
+async function setCellStyle(day, reference, cellStack, cellText, p_holiday, holiday, showEmojis, fa) {
   const today = new Date()
   let isPrivate = false;
+  let iconEmojiStr = ""
+  let iconImg 
+  let stackImage
   
-  //check if date can be replaced by emoji
-  if (showEmojis)  cellText.text = getEmoji(day, cellText.text)
+  //check if date can be replaced by emoji or nice icon
+  if (showEmojis) {
+    iconEmojiStr = getEmoji(day, cellText.text)
+    if (iconEmojiStr.length <= 5) { // does not work with 2 for some reason (assumption: emoji is more than 1 char)
+      // replace with emoji, or the already existing number (1..31)
+      cellText.text = iconEmojiStr
+    } else if (iconEmojiStr.length > 5) {
+      // replace with icon
+      iconImg =  await getIcon(iconEmojiStr);
+      cellText.text = ""
+      if (!sameDay(day, today)) { // on same day the icon will be added in green circle below
+        stackImage = cellStack.addImage(iconImg)
+        let iconSize = Math.min(cellSizeHeight, cellSizeWidth) - 4
+        stackImage.imageSize = new Size(iconSize, iconSize)
+      }
+    }
+  }
 
   if (isPrivateHoliday(day)) {
     cellText.textColor = fontColorPrivate
@@ -866,15 +920,24 @@ function setCellStyle(day, reference, cellStack, cellText, p_holiday, holiday, s
   // today get a nice circle
   if ( sameDay(day, today) ) {
     cellText.font = fontToday
-    const highlightedDate = getHighlightedDate(cellText.text, cellText.textColor)
+    const highlightedDate = getHighlightedDate(cellText.text, cellText.textColor, iconImg)
     cellText.text = "" // delete text, as circle includes the text
-    cellStack.addImage(highlightedDate);
+    cellStack.addImage(highlightedDate) 
   }
+  
+  if (stackImage) {
+    if (cellText.textColor) {
+      stackImage.tintColor = cellText.textColor
+    } else {
+      stackImage.tintColor = Color.dynamic(Color.black(), Color.white())
+    }
+  }
+  
   cellText.centerAlignText()
 }
 
 // creates circle for a highlighted day
-function getHighlightedDate(date, color) {
+function getHighlightedDate(date, color, icon) {
   const drawing = new DrawContext()
   let textColor
   if (color) {
@@ -890,7 +953,11 @@ function getHighlightedDate(date, color) {
   drawing.setFont(Font.boldSystemFont(30))
   if (textColor) drawing.setTextColor(textColor)  
   drawing.setTextAlignedCenter()
-  drawing.drawTextInRect(date, new Rect(0, 6, size, size))
+  if (icon) {
+    drawing.drawImageInRect(icon, new Rect(6, 6, size-12, size-12))
+  } else {
+    drawing.drawTextInRect(date, new Rect(0, 6, size, size))
+  }
   const currentDayImg = drawing.getImage()
   return currentDayImg
 }
@@ -910,31 +977,36 @@ function initEmojiDays(date) {
   let xmasEve = new Date(date.getFullYear(), 11, 24)
   let diff = ((-3) * 7) + ((-1)*xmasEve.getDay())
   xmasEve = addDay(xmasEve, diff) // xmasEve becomes 1st Advent
-  commonDays.push([xmasEve.getDate(), (xmasEve.getMonth())+1, "🕯"])
+  commonDays.push([xmasEve.getDate(), (xmasEve.getMonth())+1, "christmas-candle"]) //🕯
 
-  // Easter Monday  
+  // Easter Monday and Sunday 
   let EasterMonday = getDate4Holidaystring("Ostermontag")
+  commonDays.push([EasterMonday.getDate(), (EasterMonday.getMonth())+1, "easter-egg-bunny"]) //🐰
   if (EasterMonday) {
     let EasterSunday = addDay(EasterMonday, -1)
-    commonDays.push([EasterSunday.getDate(), (EasterSunday.getMonth())+1, "🐰"])
+    commonDays.push([EasterSunday.getDate(), (EasterSunday.getMonth())+1, "easter-egg-basket"]) //🐰
   }
-
+  
+  // Pfingsten / Whitsun
+  let Whitsun = getDate4Holidaystring("Pfingstmontag")
+  commonDays.push([Whitsun.getDate(), (Whitsun.getMonth())+1, "religion-christianity"]) 
+  
   // Good Friday
   if (EasterMonday) {
     let GoodFriday = addDay(EasterMonday, -3)
-    commonDays.push([GoodFriday.getDate(), (GoodFriday.getMonth())+1, "✝️"])
+    commonDays.push([GoodFriday.getDate(), (GoodFriday.getMonth())+1, "death-coffin-1"]) //✝️
   }
   
   // Ascension Day
   if (EasterMonday) {
     let AscensionDay = addDay(EasterMonday, 38)
-    commonDays.push([AscensionDay.getDate(), (AscensionDay.getMonth())+1, "☄️"])
+    commonDays.push([AscensionDay.getDate(), (AscensionDay.getMonth())+1, "astronomy-comet"]) //☄️
   }
   
   // Karneval ("Altweiber")
   if (EasterMonday) {
     let Altweiber = addDay(EasterMonday, -53)
-    commonDays.push([Altweiber.getDate(), (Altweiber.getMonth())+1, "🎭"])
+    commonDays.push([Altweiber.getDate(), (Altweiber.getMonth())+1, "party-mask"]) //🎭
   }
   
   // Black Friday (the day after the 4th Thursday in November)
@@ -943,7 +1015,7 @@ function initEmojiDays(date) {
   let bfDay = Nov1
   if ( wdNov1 <= 4) { bfDay = addDay(Nov1, (4-wdNov1)  + (3*7) + 1) } 
   if ( wdNov1 > 4)  { bfDay = addDay(Nov1, (11-wdNov1) + (3*7) + 1) }  
-  commonDays.push([bfDay.getDate(), (bfDay.getMonth())+1, "🛍"])
+  commonDays.push([bfDay.getDate(), (bfDay.getMonth())+1, "shopping-bag-smile"]) // 🛍
 }
 
 // return emojis for special days
@@ -1021,7 +1093,7 @@ async function fetchHolidayInfo(areaCode) {
     file_exists = false 
   }
 
-  if (forceApiDownload) file_exists = false
+  if (forceDownload) file_exists = false
   
   // If file does not exist, or is outdated, get a new one from feiertage-api.de
   if (file_exists == false) {
@@ -1090,7 +1162,7 @@ async function fetchPublicHolidayInfo(thisYear, otherYear, areaCode) {
     file_exists = false 
   }
 
-  if (forceApiDownload) file_exists = false
+  if (forceDownload) file_exists = false
   
   // If file does not exist, or is outdated, get a new one from feiertage-api.de
   if (file_exists == false) {
@@ -1191,6 +1263,39 @@ function isPrivateHoliday( d ){
   return false
 }
 
+
+async function loadWebImage(imgUrl) {
+  let req = new Request(imgUrl)
+  return await req.loadImage()
+}
+
+async function getIcon(iconName) {
+  let fm = FileManager.local()
+  let dir = fm.documentsDirectory()
+  
+  let localIcon = "simple_calender_" + iconName
+  let iconURL   = iconBaseURL + iconName
+
+  localIcon = localIcon + ".png"
+  iconURL   = iconURL + ".png?raw=true"
+
+  let path = fm.joinPath(dir, localIcon)
+  
+  let iconImage
+    
+  if (fm.fileExists(path) && !forceDownload) { 
+    iconImage = fm.readImage(path);
+  } else {
+    // download once
+    try{
+      iconImage = await loadWebImage(iconURL);
+      fm.writeImage(path, iconImage);
+    } catch (err) {
+    }
+  }
+
+  return iconImage
+}
 
 // creates and inits a DateFormatter
 function dfCreateAndInit (format) {
@@ -1303,6 +1408,10 @@ function parseInput(input) {
     return wParameter.length
   } 
   return 0
+}
+
+function getRandomArbitrary(min, max) {
+  return Math.random() * (max - min) + min;
 }
 
 // sets URL of widget, to forward user to Kalender after wwidget-klick
