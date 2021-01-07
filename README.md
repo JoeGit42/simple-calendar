@@ -109,3 +109,4 @@ As calendar weeks calculated in different ways, they are not the same in 2021.
 - 2020-12-04 ADD: Support for international public holiday
 - 2020-12-04 ADD: Support for background images (you can fake transparent effect with this)
 - 2020-12-11 ADD: Support for private holidays. 
+- 2021-01-07 CHG: Emojis are changed to icons from https://www.streamlineicons.com (great collection of thousands of icons)
