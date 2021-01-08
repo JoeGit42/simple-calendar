@@ -989,6 +989,10 @@ function initEmojiDays(date) {
     commonDays.push([EasterSunday.getDate(), (EasterSunday.getMonth())+1, "🐰", "easter-egg-basket"]) 
   }
   
+  // Fronleichnam / Corpus Christi
+  let CorpusChristi = getDate4Holidaystring("Fronleichnam")
+  commonDays.push([CorpusChristi.getDate(), (CorpusChristi.getMonth())+1, "💀", "skull"]) 
+   
   // Pfingsten / Whitsun
   let Whitsun = getDate4Holidaystring("Pfingstmontag")
   if (!showHolidayEmojis) {  // no emoji for Whitsun
