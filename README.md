@@ -110,3 +110,5 @@ As calendar weeks calculated in different ways, they are not the same in 2021.
 - 2020-12-04 ADD: Support for background images (you can fake transparent effect with this)
 - 2020-12-11 ADD: Support for private holidays. 
 - 2021-01-07 CHG: Emojis are changed to icons from https://www.streamlineicons.com (great collection of thousands of icons)
+- 2021-01-08 FIX: last day of holiday was handled incorrect
+- 2021-01-08 CHG: Emojis and Icons are supported in parallel. (You can set showHolidayIcons or showHolidayEmojis to true in code. Default is Emoji-style)
