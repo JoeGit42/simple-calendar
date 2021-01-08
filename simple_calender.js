@@ -875,7 +875,7 @@ async function setCellStyle(day, reference, cellStack, cellText, p_holiday, holi
   let stackImage
   
   //check if date can be replaced by emoji or nice icon
-  if (showEmojis) {
+  if (showEmojis && sameMonth(day, reference, fa) ) {
     iconEmojiStr = getEmoji(day, cellText.text)
     if (iconEmojiStr.length <= 5) { // does not work with 2 for some reason (assumption: emoji is more than 1 char)
       // replace with emoji, or the already existing number (1..31)
