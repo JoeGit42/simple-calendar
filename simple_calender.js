@@ -79,7 +79,8 @@ const appArgs = "" // used in app environment, to have widget configuration
   let styleFA = false           // Shows persian calendar EXPERIMENTAL !!!
   let markPublicHoliday = true  // does only work for german public holiday (Feiertage)
   let markHoliday = true        // does only work for german holiday (Ferien)
-  let showHolidayIcons = true   // shows emojis for well known public holidays
+  let showHolidayIcons = false   // shows icons for well known public holidays
+  let showHolidayEmojis = true // shows emojis for well known public holidays
   // config for right sheet (in medium widget)
   let showCWR =  showCW 
   let styleUSR = styleUS
@@ -87,6 +88,7 @@ const appArgs = "" // used in app environment, to have widget configuration
   let markPublicHolidayR = markPublicHoliday
   let markHolidayR = markHoliday
   let showHolidayIconsR = showHolidayIcons
+  let showHolidayEmojisR = showHolidayEmojis
 
 // Background-Image support
 // For transparent backgrounds use the following script to create the correct image:
@@ -211,22 +213,22 @@ const iconBaseURL = "https://github.com/JoeGit42/simple-calendar/blob/main/icons
 // Days which can be displayed as Emoji
 // variable days will be added in initEmojiDays()
 // It's possible to replace day with emoji or icon.
-// To use emojis, just set emoji as one character (e.g. [31, 10, "🎃"])
-// To use icons, enter icon name (e.g. [31, 10, "halloween-pumpkin"])
+// The 1st string is used for the emojis. 2nd string is used for the icon.
+// If you enter an emoji also in the 2nd string it will be displayed anyhow.
 let commonDays = [
-    [ 1,  1, "champagne-cheers"],  //🥂
-    [ 6,  1, "history-man-king"],  //👑
-    [14,  2, "love-gift-chocolate-box"],  // 💝Valentine's day
-    [ 1,  5, "walking-forbidden"],  // 🙅🏼‍♂️Tag der Arbeit, German Labour day
-    [17,  7, "smiley-smile"],  // 😀World Emoji Day
-    [ 3, 10, "🇩🇪"],  // 🇩🇪Tag der deutschen Einheit
-    [31, 10, "halloween-pumpkin"],  //🎃
-    [ 1, 11, "christmas-angel"],  //👼🏼 
-    [ 6, 12, "christmas-santa"],  //🎅🏼
-    [24, 12, "tree-christmas"],  //🎄
-    [25, 12, "christmas-tree-ornament"],  //🤶🏼
-    [26, 12, "christmas-tree-ornaments-1"],  //🎁
-    [31, 12, "champagne-cooler"]   //🍾
+    [ 1,  1, "🥂", "champagne-cheers"],  
+    [ 6,  1, "👑", "history-man-king"],  
+    [14,  2, "💝", "love-gift-chocolate-box"],  // Valentine's day
+    [ 1,  5, "🙅🏼‍♂️", "walking-forbidden"],  // Tag der Arbeit, German Labour day
+    [17,  7, "😀", "smiley-smile"],  // World Emoji Day
+    [ 3, 10, "🇩🇪", "🇩🇪"],  // 🇩🇪Tag der deutschen Einheit
+    [31, 10, "🎃", "halloween-pumpkin"],  
+    [ 1, 11, "👼🏼", "christmas-angel"],  
+    [ 6, 12, "🎅🏼", "christmas-santa"],  
+    [24, 12, "🎄", "tree-christmas"],  
+    [25, 12, "🤶🏼", "christmas-tree-ornament"],  
+    [26, 12, "🎁", "christmas-tree-ornaments-1"],  
+    [31, 12, "🍾", "champagne-cooler"]   
   ];
 const commonDaysLength = commonDays.length
 
@@ -548,7 +550,7 @@ async function createWidget(items) {
     
   let sheetLeft = doubleSheet.addStack()
   sheetLeft.layoutVertically()
-  await drawSheet(sheetLeft, monthShift, weeksInMonth, areaString, showCW, styleUS, styleFA, markPublicHoliday, markHoliday, showHolidayIcons, areaString != areaStringR);
+  await drawSheet(sheetLeft, monthShift, weeksInMonth, areaString, showCW, styleUS, styleFA, markPublicHoliday, markHoliday, (showHolidayIcons || showHolidayEmojis), areaString != areaStringR);
 
   // show 2nd in medium widget
   if (showSheetR) { 
@@ -557,7 +559,7 @@ async function createWidget(items) {
     doubleSheet.addSpacer(15)
     let sheetRight = doubleSheet.addStack()
     sheetRight.layoutVertically()
-    await drawSheet(sheetRight, monthShiftR, weeksInMonth, areaStringR, showCWR, styleUSR, styleFAR, markPublicHolidayR, markHolidayR, showHolidayIconsR, areaString != areaStringR);
+    await drawSheet(sheetRight, monthShiftR, weeksInMonth, areaStringR, showCWR, styleUSR, styleFAR, markPublicHolidayR, markHolidayR, (showHolidayIconsR || showHolidayEmojisR), areaString != areaStringR);
   }
   
   // set refresh date
@@ -977,36 +979,38 @@ function initEmojiDays(date) {
   let xmasEve = new Date(date.getFullYear(), 11, 24)
   let diff = ((-3) * 7) + ((-1)*xmasEve.getDay())
   xmasEve = addDay(xmasEve, diff) // xmasEve becomes 1st Advent
-  commonDays.push([xmasEve.getDate(), (xmasEve.getMonth())+1, "christmas-candle"]) //🕯
+  commonDays.push([xmasEve.getDate(), (xmasEve.getMonth())+1, "🕯", "christmas-candle"]) 
 
   // Easter Monday and Sunday 
   let EasterMonday = getDate4Holidaystring("Ostermontag")
-  commonDays.push([EasterMonday.getDate(), (EasterMonday.getMonth())+1, "easter-egg-bunny"]) //🐰
+  commonDays.push([EasterMonday.getDate(), (EasterMonday.getMonth())+1, "🐰", "easter-egg-bunny"]) 
   if (EasterMonday) {
     let EasterSunday = addDay(EasterMonday, -1)
-    commonDays.push([EasterSunday.getDate(), (EasterSunday.getMonth())+1, "easter-egg-basket"]) //🐰
+    commonDays.push([EasterSunday.getDate(), (EasterSunday.getMonth())+1, "🐰", "easter-egg-basket"]) 
   }
   
   // Pfingsten / Whitsun
   let Whitsun = getDate4Holidaystring("Pfingstmontag")
-  commonDays.push([Whitsun.getDate(), (Whitsun.getMonth())+1, "religion-christianity"]) 
+  if (!showHolidayEmojis) {  // no emoji for Whitsun
+    commonDays.push([Whitsun.getDate(), (Whitsun.getMonth())+1, "x", "religion-christianity"]) 
+  }
   
   // Good Friday
   if (EasterMonday) {
     let GoodFriday = addDay(EasterMonday, -3)
-    commonDays.push([GoodFriday.getDate(), (GoodFriday.getMonth())+1, "death-coffin-1"]) //✝️
+    commonDays.push([GoodFriday.getDate(), (GoodFriday.getMonth())+1, "✝️", "death-coffin-1"]) 
   }
   
   // Ascension Day
   if (EasterMonday) {
     let AscensionDay = addDay(EasterMonday, 38)
-    commonDays.push([AscensionDay.getDate(), (AscensionDay.getMonth())+1, "astronomy-comet"]) //☄️
+    commonDays.push([AscensionDay.getDate(), (AscensionDay.getMonth())+1, "☄️", "astronomy-comet"])
   }
   
   // Karneval ("Altweiber")
   if (EasterMonday) {
     let Altweiber = addDay(EasterMonday, -53)
-    commonDays.push([Altweiber.getDate(), (Altweiber.getMonth())+1, "party-mask"]) //🎭
+    commonDays.push([Altweiber.getDate(), (Altweiber.getMonth())+1, "🎭", "party-mask"]) 
   }
   
   // Black Friday (the day after the 4th Thursday in November)
@@ -1015,7 +1019,7 @@ function initEmojiDays(date) {
   let bfDay = Nov1
   if ( wdNov1 <= 4) { bfDay = addDay(Nov1, (4-wdNov1)  + (3*7) + 1) } 
   if ( wdNov1 > 4)  { bfDay = addDay(Nov1, (11-wdNov1) + (3*7) + 1) }  
-  commonDays.push([bfDay.getDate(), (bfDay.getMonth())+1, "shopping-bag-smile"]) // 🛍
+  commonDays.push([bfDay.getDate(), (bfDay.getMonth())+1, "🛍", "shopping-bag-smile"]) 
 }
 
 // return emojis for special days
@@ -1025,7 +1029,11 @@ function getEmoji(date, originalText) {
   
   for (i=0; i < commonDays.length; i++) {
     if ( commonDays[i][0] == day && commonDays[i][1] == (month + 1) ) {
-      return commonDays[i][2]
+      if (showHolidayIcons) {
+        return commonDays[i][3]
+      } else if (showHolidayEmojis) {
+        return commonDays[i][2]
+      } 
     }
   }
 
@@ -1238,7 +1246,7 @@ function isHoliday( d ){
     dEnd = new Date(dEndStr) 
     dEnd.setHours(0)
     
-    if( d >= dStart && d <= dEnd ) {
+    if( d >= dStart && d < dEnd ) {
       return true
     }
   }
@@ -1364,8 +1372,8 @@ function parseInput(input) {
     if (areaString == "NRW")  areaString  = "NW"
     if (areaStringR == "NRW") areaStringR = "NW"
     
-    if (!isGermanState(areaString))   {showHolidayIcons  = false}
-    if (!isGermanState(areaStringR))  {showHolidayIconsR = false}
+    if (!isGermanState(areaString))   {showHolidayIcons  = false; showHolidayEmojis   = false}
+    if (!isGermanState(areaStringR))  {showHolidayIconsR = false; showHolidayEmmojisR = false}
     
     // special handling for US
     if (areaString == "US") {
