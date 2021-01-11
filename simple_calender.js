@@ -221,7 +221,7 @@ let commonDays = [
     [14,  2, "💝", "love-gift-chocolate-box"],  // Valentine's day
     [ 1,  5, "🙅🏼‍♂️", "walking-forbidden"],  // Tag der Arbeit, German Labour day
     [17,  7, "😀", "smiley-smile"],  // World Emoji Day
-    [ 3, 10, "🇩🇪", "🇩🇪"],  // 🇩🇪Tag der deutschen Einheit
+    [ 3, 10, "🇩🇪", "🇩🇪"],  // Tag der deutschen Einheit
     [31, 10, "🎃", "halloween-pumpkin"],  
     [ 1, 11, "👼🏼", "christmas-angel"],  
     [ 6, 12, "🎅🏼", "christmas-santa"],  
@@ -236,7 +236,7 @@ const commonDaysLength = commonDays.length
 const privateHoliday = [
 //   ["2020-12-24", "2021-01-03"],
 //   ["2020-12-09", "2020-12-09"],
-//   ["2020-12-24", "2021-01-03"]    // last entry without comma 
+   ["2020-12-24", "2021-01-03"]    // last entry without comma 
 ];
 
 const bl = [
@@ -550,7 +550,7 @@ async function createWidget(items) {
     
   let sheetLeft = doubleSheet.addStack()
   sheetLeft.layoutVertically()
-  await drawSheet(sheetLeft, monthShift, weeksInMonth, areaString, showCW, styleUS, styleFA, markPublicHoliday, markHoliday, (showHolidayIcons || showHolidayEmojis), areaString != areaStringR);
+  await drawSheet(sheetLeft, monthShift, weeksInMonth, areaString, showCW, styleUS, styleFA, markPublicHoliday, markHoliday, showHolidayEmojis, showHolidayIcons, areaString != areaStringR);
 
   // show 2nd in medium widget
   if (showSheetR) { 
@@ -559,7 +559,7 @@ async function createWidget(items) {
     doubleSheet.addSpacer(15)
     let sheetRight = doubleSheet.addStack()
     sheetRight.layoutVertically()
-    await drawSheet(sheetRight, monthShiftR, weeksInMonth, areaStringR, showCWR, styleUSR, styleFAR, markPublicHolidayR, markHolidayR, (showHolidayIconsR || showHolidayEmojisR), areaString != areaStringR);
+    await drawSheet(sheetRight, monthShiftR, weeksInMonth, areaStringR, showCWR, styleUSR, styleFAR, markPublicHolidayR, markHolidayR, showHolidayEmojisR, showHolidayIconsR, areaString != areaStringR);
   }
   
   // set refresh date
@@ -614,7 +614,7 @@ async function getBackgroundImage () {
 }
 
 // draws one calender sheet (will be called twice in medium widget)
-async function drawSheet(drawstack, m_shift, num_rows, area, cw, us, fa, p_holiday, holiday, emojis, showArea) {
+async function drawSheet(drawstack, m_shift, num_rows, area, cw, us, fa, p_holiday, holiday, emojis, icons, showArea) {
 
   // Date string init
   const dfHeaderOtherYear = dfCreateAndInit(dfHeaderOtherYearFormat)
@@ -655,7 +655,7 @@ async function drawSheet(drawstack, m_shift, num_rows, area, cw, us, fa, p_holid
   }
   
   // Prepare the days, which are replaced with Emojis
-  if (emojis) initEmojiDays(dayToCalcWith)
+  if (emojis || icons) initEmojiDays(dayToCalcWith)
 
     
   // Prepare an array with the weekday.
@@ -779,7 +779,7 @@ async function drawSheet(drawstack, m_shift, num_rows, area, cw, us, fa, p_holid
       dayCell.centerAlignContent()
       let cellTxt = dayCell.addText( dfDay.string(dayToPrint) )
       if (fa) cellTxt.text = dayToPrint.toLocaleDateString(faLocalizationString, faDayFormat) 
-      await setCellStyle(dayToPrint, (fa) ? thisMonthFirstFa : thisMonthFirst, dayCell, cellTxt, p_holiday, holiday, emojis, fa) 
+      await setCellStyle(dayToPrint, (fa) ? thisMonthFirstFa : thisMonthFirst, dayCell, cellTxt, p_holiday, holiday, emojis, icons, fa) 
       dayToPrint = addDay(dayToPrint, 7) // prepare for the next week/row
     }
   } 
@@ -866,29 +866,51 @@ function weekCount(year, month_number, startDayOfWeek) {
   return Math.ceil( used / 7);
 }
 
+function countCodePoints(str) {
+  var point;
+  var index;
+  var width = 0;
+  var len = 0;
+  for (index = 0; index < str.length;) {
+      point = str.codePointAt(index);
+      width = 0;
+      while (point) {
+          width += 1;
+          point = point >> 8;
+      }
+      index += Math.round(width/2);
+      len += 1;
+  }
+  return len;
+}
+
 // set style for the calender
-async function setCellStyle(day, reference, cellStack, cellText, p_holiday, holiday, showEmojis, fa) {
+async function setCellStyle(day, reference, cellStack, cellText, p_holiday, holiday, showEmojis, showIcons, fa) {
   const today = new Date()
   let isPrivate = false;
-  let iconEmojiStr = ""
+  let iconStr = ""
   let iconImg 
   let stackImage
   
-  //check if date can be replaced by emoji or nice icon
-  if (showEmojis && sameMonth(day, reference, fa) ) {
-    iconEmojiStr = getEmoji(day, cellText.text)
-    if (iconEmojiStr.length <= 4) { // does not work with 2 for some reason (assumption: emoji is more than 1 char)
-      // replace with emoji, or the already existing number (1..31)
-      cellText.text = iconEmojiStr
-    } else if (iconEmojiStr.length > 4) {
-      // replace with icon
-      iconImg =  await getIcon(iconEmojiStr);
+  //check if date can be replaced by emoji
+  if (showEmojis && sameMonth(day, reference, fa)) {
+    cellText.text = getEmoji(day, cellText.text)
+  }
+
+  //check if date can be replaced by icon
+  if (showIcons && sameMonth(day, reference, fa)) {
+    iconStr = getIconName(day, cellText.text)
+    console.log(iconStr)
+    if (iconStr.length > 4) { //  length of 1 or 2 indicating numbers 1..31 / to handle emojis also strings with 4 char are not seen as icon name (does not work with all emojis, but the relevant)
+      iconImg =  await getIcon(iconStr);
       cellText.text = ""
       if (!sameDay(day, today)) { // on same day the icon will be added in green circle below
         stackImage = cellStack.addImage(iconImg)
         let iconSize = Math.min(cellSizeHeight, cellSizeWidth) - 4
         stackImage.imageSize = new Size(iconSize, iconSize)
-      }
+      } 
+    } else {
+      cellText.text = iconStr
     }
   }
 
@@ -1026,23 +1048,33 @@ function initEmojiDays(date) {
   commonDays.push([bfDay.getDate(), (bfDay.getMonth())+1, "🛍", "shopping-bag-smile"]) 
 }
 
-// return emojis for special days
-function getEmoji(date, originalText) {
+function getEmojiOrIconName(date, originalText, index) {
   let day = date.getDate()
   let month = date.getMonth()
   
   for (i=0; i < commonDays.length; i++) {
     if ( commonDays[i][0] == day && commonDays[i][1] == (month + 1) ) {
-      if (showHolidayIcons) {
-        return commonDays[i][3]
-      } else if (showHolidayEmojis) {
-        return commonDays[i][2]
-      } 
+      if (commonDays[i][index] == "x") {
+        return originalText 
+      } else {
+        return commonDays[i][index]  //2: emoji, 3: icon-name        
+      }
     }
   }
 
   return originalText
 }
+
+// return emojis for special days
+function getEmoji(date, originalText) {
+  return getEmojiOrIconName(date, originalText, 2)
+}
+
+// return icon-name for special days
+function getIconName(date, originalText) {
+  return getEmojiOrIconName(date, originalText, 3)
+}
+
 
 // Preparation of Header line with Weekdays - localized
 function prepareWeekdayHeader (styleUS, styleFA) {
