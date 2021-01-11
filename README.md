@@ -114,3 +114,4 @@ As calendar weeks calculated in different ways, they are not the same in 2021.
 - 2021-01-08 CHG: Emojis and Icons are supported in parallel. (You can set showHolidayIcons or showHolidayEmojis to true in code. Default is Emoji-style)
 - 2021-01-08 CHG: Emojis/Icons are only shown within month to display. If first or last row contains days for previous or next month, only numbers are shown.
 - 2021-01-08 ADD: Emoji/Icon support for Fronleichnam / Corpus Christi
+- 2021-01-11 FIX: Bigfix in emoji/icon handling
