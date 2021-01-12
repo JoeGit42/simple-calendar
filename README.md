@@ -115,3 +115,4 @@ As calendar weeks calculated in different ways, they are not the same in 2021.
 - 2021-01-08 CHG: Emojis/Icons are only shown within month to display. If first or last row contains days for previous or next month, only numbers are shown.
 - 2021-01-08 ADD: Emoji/Icon support for Fronleichnam / Corpus Christi
 - 2021-01-11 FIX: Bigfix in emoji/icon handling
+- 2021-01-12 FIX: problem with us style calender
