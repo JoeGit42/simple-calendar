@@ -1002,18 +1002,20 @@ function initEmojiDays(date) {
   let diff = ((-3) * 7) + ((-1)*xmasEve.getDay())
   xmasEve = addDay(xmasEve, diff) // xmasEve becomes 1st Advent
   commonDays.push([xmasEve.getDate(), (xmasEve.getMonth())+1, "🕯", "christmas-candle"]) 
-
+  
   // Easter Monday and Sunday 
   let EasterMonday = getDate4Holidaystring("Ostermontag")
-  commonDays.push([EasterMonday.getDate(), (EasterMonday.getMonth())+1, "🐰", "easter-egg-bunny"]) 
   if (EasterMonday) {
+    commonDays.push([EasterMonday.getDate(), (EasterMonday.getMonth())+1, "🐰", "easter-egg-bunny"]) 
     let EasterSunday = addDay(EasterMonday, -1)
     commonDays.push([EasterSunday.getDate(), (EasterSunday.getMonth())+1, "🐰", "easter-egg-basket"]) 
   }
   
   // Fronleichnam / Corpus Christi
   let CorpusChristi = getDate4Holidaystring("Fronleichnam")
-  commonDays.push([CorpusChristi.getDate(), (CorpusChristi.getMonth())+1, "💀", "skull"]) 
+  if (CorpusChristi) {
+    commonDays.push([CorpusChristi.getDate(), (CorpusChristi.getMonth())+1, "💀", "skull"]) 
+  }
    
   // Pfingsten / Whitsun
   let Whitsun = getDate4Holidaystring("Pfingstmontag")
@@ -1161,6 +1163,7 @@ function isGermanState(area) {
   for (i=0; i<bl.length; i++) {
     if ( area.toUpperCase() == bl[i][0].toUpperCase() ) return true
   }
+  return false
 }
 
 // fetches the public holiday (german: Feiertage) info and does caching
